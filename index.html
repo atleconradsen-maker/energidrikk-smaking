@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Energidrikk Smaking</title>
+<meta name="description" content="Ukentlig energidrikktest: smak og smak vs. pris, 1–10. Toppliste, kåringer og dommerpanel.">
+<meta property="og:title" content="Energidrikk Smaking">
+<meta property="og:image" content="logo.jpg">
+<link rel="icon" href="logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: kåringsshow mellom kompiser – stolt, litt høylytt, men ryddig
+   IDEA: et premieutdelingsark / resultattavle for ukens boks
+   PICTURE: stort bilde av boksen + gigantisk totalscore, som Kebabtesten
+   COLOUR and TYPE: logoens nattblå, gull og isblå; Anton + Inter
+   LAYOUT: Kebabtesten-malen – hero, kåringer, toppliste + dommerpanel, alle drikker */
+:root{color-scheme:dark;
+  --bg:#07122b;--panel:#0e1c3d;--panel2:#142650;--line:#223766;--line2:#1a2c55;
+  --ink:#f4f6fb;--muted:#9fb0d0;--gold:#e2c98f;--gold2:#f1dcaa;--ice:#4aa3ff;--ink-on-gold:#1a1408;
+  --good:#8fe08a;--bad:#ff8a7a}
+*{box-sizing:border-box;min-width:0}
+html{scroll-padding-top:84px;scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip;
+  background:radial-gradient(1100px 520px at 50% -220px,#17336f 0%,transparent 70%),var(--bg)}
+a{color:var(--gold)}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:1200px;margin:0 auto;padding:24px clamp(16px,3vw,32px) 72px;display:flex;flex-direction:column;gap:44px}
+.h{font-family:Anton,Impact,sans-serif;font-weight:400;letter-spacing:.3px;text-transform:uppercase;margin:0;line-height:1.05}
+.lbl{font-size:12px;font-weight:800;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase}
+.hidden{display:none!important}
+
+/* header */
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  padding:12px 0;margin:-12px 0 -20px;background:linear-gradient(var(--bg) 70%,transparent);backdrop-filter:blur(6px)}
+.brand{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit}
+.brand img{width:64px;height:64px;border-radius:50%;box-shadow:0 0 0 3px var(--gold),0 8px 24px rgba(0,0,0,.5);background:#fff}
+.brand .h{font-size:32px}.brand .h span{color:var(--gold)}
+.brand small{display:block;color:var(--muted);font-size:14px;margin-top:3px}
+nav{display:flex;gap:4px;background:var(--panel);padding:4px;border-radius:999px;border:1px solid var(--line)}
+nav a{padding:10px 16px;border-radius:999px;color:var(--muted);font-weight:700;font-size:14px;text-decoration:none;white-space:nowrap}
+nav a.on{background:var(--ink);color:var(--bg)}
+nav a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+.notice{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;color:var(--muted);display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.notice b{color:var(--ink)}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:11px 18px;font-weight:700;min-height:44px}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:var(--ink-on-gold)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:28px;align-items:stretch}
+.shot{position:relative;border-radius:24px;min-height:420px;overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(60% 60% at 50% 45%,#1d3d82,transparent 70%),repeating-linear-gradient(135deg,#0f1f45 0 14px,#0c1a3b 14px 28px)}
+.shot img.photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.shot .ph{display:flex;flex-direction:column;align-items:center;gap:10px;color:#6f84b3;font-weight:600}
+.badge{position:absolute;left:18px;top:18px;background:var(--gold);color:var(--ink-on-gold);font-weight:800;font-size:12px;letter-spacing:1.1px;padding:7px 12px;border-radius:999px;text-transform:uppercase}
+.hero-info{display:flex;flex-direction:column;gap:20px;justify-content:center}
+.hero-info .h1{font-size:clamp(38px,6vw,56px);margin:8px 0 8px;text-wrap:balance}
+.meta{color:var(--muted);font-size:15px}
+.score-big{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.score-big .n{font-family:Anton,sans-serif;font-size:clamp(76px,12vw,108px);line-height:.85;color:var(--gold)}
+.score-big .split{font-size:14px;color:#cdd6ea;margin-top:6px}.score-big b{color:var(--ink)}
+.bars{display:grid;gap:12px}
+.bar-row{display:grid;grid-template-columns:120px minmax(0,1fr) 36px;gap:12px;align-items:center;font-size:14px}
+.bar-row span{color:var(--muted);font-weight:600}.bar-row b{text-align:right;font-variant-numeric:tabular-nums}
+.bar{height:9px;border-radius:99px;background:var(--line2);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--ice);transform-origin:left;animation:grow .9s cubic-bezier(.2,.8,.2,1) both}
+.bar.g i{background:var(--gold)}
+@keyframes grow{from{transform:scaleX(0)}}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;padding:6px 11px;border-radius:99px;background:var(--panel2);color:var(--muted)}
+.chip b{color:var(--ink);font-variant-numeric:tabular-nums}
+.quote{margin:0;font-style:italic;color:#cdd6ea;font-size:16px}
+.also{margin-top:-18px}
+.also .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+
+/* awards */
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.sec-h .h{font-size:28px}
+.awards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:14px}
+.award{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:6px}
+.award .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.award .t{font-size:12px;font-weight:800;letter-spacing:1.3px;color:var(--gold);text-transform:uppercase}
+.award .s{font-family:Anton,sans-serif;font-size:34px;line-height:1;color:var(--gold2)}
+.award .p{font-size:19px;font-weight:800;line-height:1.25}
+.award .sub{font-size:13px;color:var(--muted)}
+.award.none .p{color:var(--muted);font-size:15px;font-weight:600}
+
+/* board + jury */
+.split2{display:flex;flex-wrap:wrap;gap:28px}
+.split2>.main{flex:999 1 560px}.split2>.side{flex:1 1 300px;display:flex;flex-direction:column;gap:12px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-size:13px;font-weight:700;padding:9px 14px;min-height:40px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted)}
+.pill.on{border-color:var(--gold);color:var(--gold)}
+.board{background:#0b1834;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.br{display:grid;grid-template-columns:44px minmax(0,1fr) 64px 64px 78px 76px;gap:8px;padding:14px 18px;align-items:center;border-top:1px solid var(--line2)}
+.br.head{border-top:0;background:#11214a;font-size:11px;font-weight:800;letter-spacing:1.1px;color:var(--muted);padding-block:12px}
+.br .rk{font-family:Anton,sans-serif;font-size:22px;color:#5d72a3}
+.br .nm b{display:block;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.br .nm small{display:block;font-size:12px;color:var(--muted)}
+.br .c{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.br .c.sel{color:var(--gold)}
+.br .tot{text-align:right;font-family:Anton,sans-serif;font-size:21px;color:var(--gold2)}
+.br.head .c,.br.head .tot{font-family:Inter;font-size:11px;color:var(--muted)}
+.br .nm .mob{display:none}
+@media(max-width:640px){
+  .br{grid-template-columns:32px minmax(0,1fr) 60px;padding:13px 14px}
+  .br .c{display:none}.br .nm .mob{display:block;font-size:12px;color:var(--muted)}
+}
+.judge{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;gap:14px;align-items:center}
+.av{width:48px;height:48px;border-radius:50%;flex:none;display:grid;place-items:center;font-family:Anton,sans-serif;font-size:18px;color:#1a1408;background:linear-gradient(135deg,var(--gold2),#b8995a)}
+.judge .jn{font-weight:800}.judge .js{font-size:13px;color:var(--muted)}.judge .js b{color:var(--ink)}
+.judge>div:nth-child(2){flex:1}
+.tag{flex:none;font-size:11px;font-weight:800;letter-spacing:.7px;padding:4px 9px;border-radius:99px;margin-left:auto;white-space:nowrap}
+.tag.kind{background:#1f3322;color:var(--good)}.tag.hard{background:#3d1f1c;color:var(--bad)}
+.cta{display:block;text-align:center;padding:15px;border-radius:999px;background:var(--gold);color:var(--ink-on-gold);font-weight:800;text-decoration:none;margin-top:4px}
+
+/* all */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(270px,100%),1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.card .im{height:160px;position:relative;background:repeating-linear-gradient(135deg,#0f1f45 0 12px,#0c1a3b 12px 24px);display:grid;place-items:center;color:#5d72a3}
+.card .im img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.card .bd{padding:16px;display:flex;flex-direction:column;gap:12px}
+.card .hd{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.card h3{margin:0;font-size:18px;line-height:1.2}
+.card .tt{font-family:Anton,sans-serif;font-size:36px;line-height:.9;color:var(--gold)}
+.card .bar-row{grid-template-columns:100px minmax(0,1fr) 30px;font-size:13px}
+.wk{margin:26px 0 12px;font-size:22px}
+select{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:16px;color:var(--ink);min-height:44px}
+.empty{text-align:center;color:var(--muted);padding:40px 16px;border:1px dashed var(--line);border-radius:18px}
+.empty b{display:block;color:var(--ink);font-size:18px;margin-bottom:4px}
+footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top:18px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+@media(max-width:600px){
+  header{position:static;margin:0}
+  .brand img{width:48px;height:48px}.brand .h{font-size:24px}.brand small{display:none}
+  nav{width:100%}nav a{flex:1;text-align:center;padding:11px 6px}
+  .shot{min-height:260px}
+  .bar-row{grid-template-columns:96px minmax(0,1fr) 30px}
+  .wrap{gap:36px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="#siste">
+      <img src="logo.jpg" alt="Energidrikk Smaking-logo">
+      <div><div class="h">Energidrikk <span>Smaking</span></div><small>Smak og smak vs. pris får hver sin score fra 1 til 10</small></div>
+    </a>
+    <nav id="nav">
+      <a href="#siste" class="on">Siste test</a>
+      <a href="#toppliste">Toppliste</a>
+      <a href="#alle">Alle drikker</a>
+    </nav>
+  </header>
+
+  <div class="notice hidden" id="notice"></div>
+
+  <section id="siste"></section>
+  <section id="kaaringer"></section>
+  <section id="toppliste" class="split2"></section>
+  <section id="alle"></section>
+
+  <footer>
+    <span>Totalscoren er snittet av smak og smak vs. pris. Hver testperson gir 1–10 på begge.</span>
+    <span id="updated"></span>
+  </footer>
+</div>
+
+<script>
+{
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TESTERS = ['Itrat Zishan', 'Tobias Frost', 'Atle Conradsen', 'Truls Blingø'];
+const avg = a => { a = a.filter(x => x != null); return a.length ? a.reduce((s, x) => s + x, 0) / a.length : null; };
+const f1 = v => v == null ? '–' : (Math.round(v * 10) / 10).toFixed(1).replace('.', ',');
+const kr = v => v == null ? '' : v.toLocaleString('nb-NO', {maximumFractionDigits: 2}) + '\u00a0kr';
+const sc = v => { const n = Math.round(Number(v)); return n >= 1 && n <= 10 ? n : null; };
+const wk = w => { const m = /^(\d{4})-W(\d{1,2})$/.exec(w || ''); return m ? `Uke ${+m[2]} · ${m[1]}` : 'Ukjent uke'; };
+const wkShort = w => { const m = /^(\d{4})-W(\d{1,2})$/.exec(w || ''); return m ? `uke ${+m[2]}` : ''; };
+const safePhoto = p => typeof p === 'string' && /^[\w\-./]+\.(jpe?g|png|webp|gif)$/i.test(p) && !p.includes('..') ? p : '';
+const CAN = `<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8l1 2v14l-1 2H8l-1-2V5z"/><path d="M7 7h10M7 17h10"/><path d="M13 9l-2.5 3.5h3L11 16"/></svg>`;
+
+let tests = [], sortKey = 'total', weekFilter = 'all', demo = false;
+
+function norm(d, i) {
+  const scores = (Array.isArray(d.scores) ? d.scores : []).map(s => ({name: String(s?.name || 'Anonym').slice(0, 40), taste: sc(s?.taste), value: sc(s?.value)})).filter(s => s.taste != null || s.value != null);
+  const taste = avg(scores.map(s => s.taste)), value = avg(scores.map(s => s.value));
+  const price = Number.isFinite(+d.price) && d.price !== null && d.price !== '' ? +d.price : null;
+  const ml = Number.isFinite(+d.ml) && +d.ml > 0 ? +d.ml : null;
+  return {id: String(d.id || i), drink: String(d.drink || 'Uten navn').slice(0, 80), brand: String(d.brand || '').slice(0, 60),
+    week: String(d.week || ''), price, ml, perL: price != null && ml ? price / ml * 1000 : null, photo: safePhoto(d.photo),
+    notes: String(d.notes || '').slice(0, 400), scores, taste, value,
+    total: taste != null && value != null ? (taste + value) / 2 : (taste ?? value)};
+}
+const weeks = () => [...new Set(tests.map(t => t.week).filter(Boolean))].sort().reverse();
+const byTotal = (a, b) => (b.total ?? -1) - (a.total ?? -1);
+const perL = v => v == null ? '' : kr(Math.round(v * 10) / 10) + '/l';
+const metaLine = t => [t.brand, t.ml ? t.ml + '\u00a0ml' : '', kr(t.price), perL(t.perL)].filter(Boolean).join(' · ');
+const bar = (label, v, gold) => `<div class="bar-row"><span>${label}</span><div class="bar${gold ? ' g' : ''}"><i style="width:${v ? v * 10 : 0}%"></i></div><b>${f1(v)}</b></div>`;
+const img = (t, cls) => t.photo ? `<img class="${cls || ''}" src="${esc(t.photo)}" alt="${esc(t.drink)}" loading="lazy" onerror="this.remove()">` : '';
+
+function renderHero() {
+  const box = $('#siste');
+  if (!tests.length) { box.innerHTML = `<div class="empty"><b>Ingen tester publisert ennå</b>Første test dukker opp her så snart den er lagt inn.</div>`; return; }
+  const w = weeks()[0];
+  const list = tests.filter(t => t.week === w).sort(byTotal);
+  const t = list[0];
+  box.innerHTML = `<div class="hero">
+    <div class="shot">${t.photo ? img(t, 'photo') : ''}<div class="ph">${CAN}Bilde av boksen</div><div class="badge">${esc(wkShort(t.week))} · ukens drikk</div></div>
+    <div class="hero-info">
+      <div><div class="lbl" style="color:var(--gold)">Siste test</div>
+        <h1 class="h h1">${esc(t.drink)}</h1><div class="meta">${esc(metaLine(t))}</div></div>
+      <div class="score-big"><div class="n">${f1(t.total)}</div>
+        <div style="padding-bottom:6px"><div class="lbl">Totalscore</div><div class="split">Smak <b>${f1(t.taste)}</b> + smak vs. pris <b>${f1(t.value)}</b></div></div></div>
+      <div class="bars">${bar('Smak', t.taste, true)}${bar('Smak vs. pris', t.value)}</div>
+      ${t.scores.length ? `<div class="chips">${t.scores.map(s => `<span class="chip">${esc(s.name.split(' ')[0])} <b>${s.taste ?? '–'} / ${s.value ?? '–'}</b></span>`).join('')}</div>` : ''}
+      ${t.notes ? `<p class="quote">«${esc(t.notes)}»</p>` : ''}
+    </div></div>
+    ${list.length > 1 ? `<div class="also" style="margin-top:22px"><div class="lbl">Også testet ${esc(wkShort(w))}</div><div class="row">${list.slice(1).map(x => `<span class="chip">${esc(x.drink)} <b>${f1(x.total)}</b></span>`).join('')}</div></div>` : ''}`;
+}
+
+function best(list, key, low) {
+  const l = list.filter(t => t[key] != null);
+  return l.length ? l.reduce((a, b) => (low ? b[key] < a[key] : b[key] > a[key]) ? b : a) : null;
+}
+function renderAwards() {
+  const n = tests.length;
+  const aw = [
+    ['Smakskongen', best(tests, 'taste'), 'taste', t => `Best smak av ${n} drikker`],
+    ['Mest for pengene', best(tests, 'value'), 'value', t => t.perL != null ? `${kr(Math.round(t.perL * 10) / 10)} per liter` : 'Høyest smak vs. pris'],
+    ['Totalvinner', best(tests, 'total'), 'total', t => [t.brand, wk(t.week)].filter(Boolean).join(' · ')],
+    ['Bunnskraperen', n > 1 ? best(tests, 'total', true) : null, 'total', t => 'Laveste totalscore så langt']
+  ];
+  $('#kaaringer').innerHTML = `<div class="sec-h"><h2 class="h">Kåringer</h2></div><div class="awards">${aw.map(([title, t, k, sub]) => t
+    ? `<div class="award"><div class="top"><div class="t">${title}</div><div class="s">${f1(t[k])}</div></div><div class="p">${esc(t.drink)}</div><div class="sub">${esc(sub(t))}</div></div>`
+    : `<div class="award none"><div class="t">${title}</div><div class="p">Kåres når testene er inne</div></div>`).join('')}</div>`;
+}
+
+function renderBoard() {
+  const opts = [['total', 'Total'], ['taste', 'Smak'], ['value', 'Smak vs. pris'], ['perL', 'Kr per liter']];
+  const list = [...tests].sort((a, b) => sortKey === 'perL' ? (a.perL ?? 1e9) - (b.perL ?? 1e9) : (b[sortKey] ?? -1) - (a[sortKey] ?? -1));
+  const colors = ['var(--gold)', '#d8dfec', '#d08a5a'];
+  const rows = list.map((t, i) => `<div class="br"><span class="rk" style="${i < 3 ? 'color:' + colors[i] : ''}">${i + 1}</span>
+    <span class="nm"><b>${esc(t.drink)}</b><small>${esc([t.brand, wkShort(t.week)].filter(Boolean).join(' · '))}</small>
+      <small class="mob">Smak ${f1(t.taste)} · verdi ${f1(t.value)}${t.perL != null ? ' · ' + esc(perL(t.perL)) : ''}</small></span>
+    <span class="c${sortKey === 'taste' ? ' sel' : ''}">${f1(t.taste)}</span><span class="c${sortKey === 'value' ? ' sel' : ''}">${f1(t.value)}</span>
+    <span class="c${sortKey === 'perL' ? ' sel' : ''}">${t.perL != null ? esc(kr(Math.round(t.perL))) : '–'}</span><span class="tot">${f1(t.total)}</span></div>`).join('');
+  const judges = TESTERS.map(name => ({name, given: [], favs: []}));
+  for (const t of tests) for (const s of t.scores) {
+    let j = judges.find(x => x.name === s.name); if (!j) judges.push(j = {name: s.name, given: [], favs: []});
+    j.given.push(s.taste, s.value); const mine = avg([s.taste, s.value]); if (mine != null) j.favs.push([mine, t.drink]);
+  }
+  judges.forEach(j => { j.avg = avg(j.given); j.fav = j.favs.sort((a, b) => b[0] - a[0])[0]?.[1]; j.n = j.favs.length; });
+  const rated = judges.filter(j => j.avg != null);
+  const kind = rated.length > 1 ? rated.reduce((a, b) => b.avg > a.avg ? b : a) : null;
+  const hard = rated.length > 1 ? rated.reduce((a, b) => b.avg < a.avg ? b : a) : null;
+  $('#toppliste').innerHTML = `<div class="main">
+      <div class="sec-h"><h2 class="h">Toppliste</h2><div class="pills">${opts.map(([k, l]) => `<button class="pill${k === sortKey ? ' on' : ''}" data-sort="${k}">${l}</button>`).join('')}</div></div>
+      ${tests.length ? `<div class="board"><div class="br head"><span>#</span><span>Drikk</span><span class="c">Smak</span><span class="c">Verdi</span><span class="c">Kr/l</span><span class="tot">Total</span></div>${rows}</div>`
+        : `<div class="empty"><b>Topplista er tom</b>Den fylles opp etter hvert som drikkene testes.</div>`}
+    </div>
+    <div class="side"><h2 class="h" style="font-size:28px;margin-bottom:4px">Dommerpanelet</h2>
+      ${judges.map(j => `<div class="judge"><div class="av">${esc(j.name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase())}</div>
+        <div><div class="jn">${esc(j.name)}</div><div class="js">${j.n ? `Snitt gitt <b>${f1(j.avg)}</b> · ${j.n} tester${j.fav ? ' · favoritt: ' + esc(j.fav) : ''}` : 'Ingen tester ennå'}</div></div>
+        ${j === kind ? '<span class="tag kind">SNILLEST</span>' : j === hard ? '<span class="tag hard">STRENGEST</span>' : ''}</div>`).join('')}
+    </div>`;
+}
+
+function card(t) {
+  return `<article class="card"><div class="im">${CAN}${img(t)}</div><div class="bd">
+    <div class="hd"><div><h3>${esc(t.drink)}</h3><div class="meta" style="font-size:13px">${esc(metaLine(t))}</div><div class="meta" style="font-size:13px">${esc(wk(t.week))}</div></div><div class="tt">${f1(t.total)}</div></div>
+    <div class="bars">${bar('Smak', t.taste, true)}${bar('Smak vs. pris', t.value)}</div>
+    ${t.notes ? `<p class="quote" style="font-size:14px">«${esc(t.notes)}»</p>` : ''}</div></article>`;
+}
+function renderAll() {
+  const ws = weeks();
+  if (weekFilter !== 'all' && !ws.includes(weekFilter)) weekFilter = 'all';
+  let html = `<div class="sec-h"><h2 class="h">Alle drikker</h2>${ws.length > 1 ? `<select id="wsel" aria-label="Velg uke"><option value="all">Alle uker</option>${ws.map(w => `<option value="${esc(w)}"${w === weekFilter ? ' selected' : ''}>${esc(wk(w))}</option>`).join('')}</select>` : ''}</div>`;
+  if (!tests.length) html += `<div class="empty"><b>Ingen drikker ennå</b>Alle tester samles her, uke for uke.</div>`;
+  const l = tests.filter(t => weekFilter === 'all' || t.week === weekFilter).sort((a, b) => b.week.localeCompare(a.week) || byTotal(a, b));
+  if (l.length) html += `<div class="grid">${l.map(card).join('')}</div>`;
+  $('#alle').innerHTML = html;
+}
+
+function render() { renderHero(); renderAwards(); renderBoard(); renderAll(); }
+
+document.addEventListener('click', e => {
+  const p = e.target.closest('[data-sort]'); if (p) { sortKey = p.dataset.sort; renderBoard(); return; }
+  const d = e.target.closest('[data-demo]'); if (d) { load(d.dataset.demo === '1'); }
+});
+document.addEventListener('change', e => { if (e.target.id === 'wsel') { weekFilter = e.target.value; renderAll(); } });
+
+// active nav link while scrolling
+const navLinks = [...document.querySelectorAll('#nav a')];
+const spy = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) navLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + en.target.id)); }), {rootMargin: '-40% 0px -55% 0px'});
+['siste', 'toppliste', 'alle'].forEach(id => spy.observe(document.getElementById(id)));
+
+async function getJSON(url) { const r = await fetch(url + '?v=' + Date.now(), {cache: 'no-store'}); if (!r.ok) throw new Error(r.status); return r.json(); }
+async function load(useDemo) {
+  const nb = $('#notice');
+  try {
+    let data = useDemo ? [] : await getJSON('data/tests.json');
+    demo = useDemo || !Array.isArray(data) || !data.length;
+    if (demo) data = await getJSON('data/eksempel.json');
+    tests = data.map(norm);
+    nb.classList.toggle('hidden', !demo);
+    nb.innerHTML = demo ? `<span><b>Eksempeldata.</b> Ingen ekte tester er publisert ennå, så siden viser et eksempel.</span>` : '';
+    $('#updated').textContent = demo ? '' : `${tests.length} drikker testet`;
+  } catch {
+    tests = []; nb.classList.remove('hidden'); nb.innerHTML = '<span>Kunne ikke hente testene. Prøv å laste siden på nytt.</span>';
+  }
+  render();
+}
+render(); load(location.hash === '#eksempel');
+}
+</script>
+</body>
+</html>

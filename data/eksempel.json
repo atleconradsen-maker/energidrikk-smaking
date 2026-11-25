@@ -1,0 +1,6 @@
+[
+  {"id":"monster-ultra-white-2026-w48","drink":"Monster Ultra White","brand":"Monster","week":"2026-W48","price":29.9,"ml":500,"photo":"","notes":"Frisk og lett, nesten ingen ettersmak.","scores":[{"name":"Itrat Zishan","taste":8,"value":8},{"name":"Tobias Frost","taste":7,"value":7},{"name":"Atle Conradsen","taste":9,"value":8},{"name":"Truls Blingø","taste":8,"value":9}]},
+  {"id":"red-bull-original-2026-w47","drink":"Red Bull Original","brand":"Red Bull","week":"2026-W47","price":27.9,"ml":250,"photo":"","notes":"Klassikeren. Dyr per liter.","scores":[{"name":"Itrat Zishan","taste":7,"value":4},{"name":"Tobias Frost","taste":6,"value":3},{"name":"Atle Conradsen","taste":8,"value":5},{"name":"Truls Blingø","taste":7,"value":4}]},
+  {"id":"burn-original-2026-w46","drink":"Burn Original","brand":"Burn","week":"2026-W46","price":24.9,"ml":500,"photo":"","notes":"Søt, men gjør jobben.","scores":[{"name":"Itrat Zishan","taste":6,"value":8},{"name":"Tobias Frost","taste":5,"value":7},{"name":"Atle Conradsen","taste":7,"value":8}]},
+  {"id":"celsius-mango-2026-w45","drink":"Celsius Mango Passionfruit","brand":"Celsius","week":"2026-W45","price":26.9,"ml":355,"photo":"","notes":"","scores":[{"name":"Itrat Zishan","taste":5,"value":5},{"name":"Tobias Frost","taste":4,"value":4},{"name":"Atle Conradsen","taste":6,"value":6}]}
+]

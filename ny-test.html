@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Ny test – Energidrikk Smaking</title>
+<link rel="icon" href="logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#07122b;--panel:#0e1c3d;--panel2:#142650;--line:#223766;--ink:#f4f6fb;--muted:#9fb0d0;--gold:#e2c98f;--ice:#4aa3ff;--on-gold:#1a1408}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif}
+.wrap{max-width:520px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:center;gap:12px}
+.back{width:44px;height:44px;border-radius:50%;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink);text-decoration:none}
+h1{font-family:Anton,sans-serif;font-weight:400;font-size:26px;margin:0;text-transform:uppercase}
+label,.lab{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;letter-spacing:.8px;color:var(--muted);text-transform:uppercase}
+input,textarea{font:inherit;font-size:16px;font-weight:500;letter-spacing:0;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 14px;width:100%;text-transform:none}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.photo{border:1.5px dashed #33497d;background:#0b1834;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;color:var(--muted);font-weight:700;text-transform:none;letter-spacing:0;font-size:15px}
+.photo img{width:72px;height:72px;border-radius:12px;object-fit:cover}
+.photo input{display:none}
+.tester{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px 14px}
+.tester.off .rows{display:none}.tester.off .nm{color:var(--muted)}
+.th{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.nm{font-weight:800}
+.tog{font:inherit;font-size:13px;font-weight:700;padding:8px 12px;min-height:40px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
+.tog.on{border-color:var(--gold);color:var(--gold)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid #1a2c55;margin-top:8px}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:20px;font-weight:700;cursor:pointer}
+.step span{width:36px;text-align:center;font-family:Anton,sans-serif;font-size:24px;color:var(--gold)}
+.sum{display:flex;justify-content:space-between;align-items:center;padding:4px}
+.sum b{font-family:Anton,sans-serif;font-weight:400;font-size:36px;color:var(--gold)}
+.btn{font:inherit;font-weight:800;padding:15px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer;min-height:48px;width:100%}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:var(--on-gold)}
+.msg{font-size:14px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.msg b{color:var(--ink)}.msg.err{color:#ff8a7a}
+ol{margin:6px 0 0;padding-left:20px}
+.hidden{display:none!important}
+code{background:#0b1834;padding:1px 5px;border-radius:6px;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<form class="wrap" id="f" autocomplete="off">
+  <header><a class="back" href="./" aria-label="Tilbake"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a><h1>Ny test</h1></header>
+
+  <label>Drikk / smak<input id="drink" required placeholder="F.eks. Monster Ultra White"></label>
+  <div class="two">
+    <label>Merke<input id="brand" placeholder="Monster"></label>
+    <label>Uke<input id="week" type="week" required></label>
+    <label>Pris (kr)<input id="price" type="number" inputmode="decimal" step="0.1" min="0" placeholder="29,90"></label>
+    <label>Størrelse (ml)<input id="ml" type="number" inputmode="numeric" min="0" placeholder="500"></label>
+  </div>
+
+  <div class="lab">Bilde av boksen
+    <label class="photo" id="photoLbl"><input id="photo" type="file" accept="image/*"><span id="photoTxt">Velg eller ta bilde</span></label>
+  </div>
+
+  <div class="lab">Score fra (1–10)</div>
+  <div id="testers" style="display:flex;flex-direction:column;gap:10px;margin-top:-10px"></div>
+
+  <label>Kommentar<textarea id="notes" rows="2" placeholder="Valgfritt"></textarea></label>
+
+  <div class="sum"><span class="lab" style="flex-direction:row">Total (snitt smak + verdi)</span><b id="total">–</b></div>
+
+  <button class="btn gold" type="submit">Lag oppdatert tests.json</button>
+  <div id="out" class="hidden" style="display:flex;flex-direction:column;gap:10px"></div>
+</form>
+
+<script>
+{
+const $ = s => document.querySelector(s);
+const TESTERS = ['Itrat Zishan', 'Tobias Frost', 'Atle Conradsen', 'Truls Blingø'];
+const state = TESTERS.map(name => ({name, on: true, taste: 5, value: 5}));
+let photoFile = null;
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slug = s => s.toLowerCase().replace(/[æ]/g, 'ae').replace(/[ø]/g, 'o').replace(/[å]/g, 'a').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'drikk';
+function isoWeek(d = new Date()) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day); const y = t.getUTCFullYear();
+  return `${y}-W${String(Math.ceil(((t - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7)).padStart(2, '0')}`;
+}
+$('#week').value = isoWeek();
+
+function draw() {
+  $('#testers').innerHTML = state.map((t, i) => `<div class="tester${t.on ? '' : ' off'}"><div class="th"><span class="nm">${esc(t.name)}</span>
+    <button type="button" class="tog${t.on ? ' on' : ''}" data-tog="${i}">${t.on ? 'Var med' : 'Ikke med'}</button></div>
+    <div class="rows">${[['taste', 'Smak'], ['value', 'Smak vs. pris']].map(([k, l]) => `<div class="row"><span style="font-weight:600">${l}</span>
+      <div class="step"><button type="button" data-i="${i}" data-k="${k}" data-d="-1" aria-label="Mindre">−</button><span>${t[k]}</span><button type="button" data-i="${i}" data-k="${k}" data-d="1" aria-label="Mer">+</button></div></div>`).join('')}</div></div>`).join('');
+  const on = state.filter(t => t.on);
+  const a = on.length ? on.reduce((s, t) => s + t.taste + t.value, 0) / (on.length * 2) : null;
+  $('#total').textContent = a == null ? '–' : a.toFixed(1).replace('.', ',');
+}
+$('#testers').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.tog) { const t = state[b.dataset.tog]; t.on = !t.on; }
+  else { const t = state[b.dataset.i]; t[b.dataset.k] = Math.min(10, Math.max(1, t[b.dataset.k] + +b.dataset.d)); }
+  draw();
+});
+draw();
+
+$('#photo').addEventListener('change', e => {
+  photoFile = e.target.files[0] || null;
+  const lbl = $('#photoLbl'); lbl.querySelector('img')?.remove();
+  if (photoFile) { const im = document.createElement('img'); im.src = URL.createObjectURL(photoFile); lbl.prepend(im); $('#photoTxt').textContent = 'Bytt bilde'; }
+});
+
+function download(name, blob) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove();
+}
+
+$('#f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const out = $('#out'); out.classList.remove('hidden');
+  const drink = $('#drink').value.trim();
+  const scores = state.filter(t => t.on).map(({name, taste, value}) => ({name, taste, value}));
+  if (!drink || !scores.length) { out.innerHTML = '<div class="msg err">Fyll inn navnet på drikken og minst én testperson.</div>'; return; }
+  const week = $('#week').value || isoWeek();
+  const id = slug(drink) + '-' + week.toLowerCase();
+  const ext = photoFile ? ((photoFile.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z]/g, '') || 'jpg') : '';
+  const photo = photoFile ? `bilder/${id}.${ext}` : '';
+  const price = parseFloat(String($('#price').value).replace(',', '.'));
+  const ml = parseFloat($('#ml').value);
+  const entry = {id, drink: drink.slice(0, 80), brand: $('#brand').value.trim().slice(0, 60), week,
+    price: Number.isFinite(price) ? price : null, ml: Number.isFinite(ml) ? ml : null, photo, notes: $('#notes').value.trim().slice(0, 400), scores};
+  let all = [];
+  try { const r = await fetch('data/tests.json?v=' + Date.now(), {cache: 'no-store'}); if (r.ok) all = await r.json(); } catch {}
+  if (!Array.isArray(all)) all = [];
+  all = all.filter(t => t.id !== id); all.push(entry);
+  const json = '[\n' + all.map(t => '  ' + JSON.stringify(t)).join(',\n') + '\n]\n';
+  out.innerHTML = `<div class="msg"><b>Klar!</b> Slik publiserer du:<ol>
+      <li>Gå til repoet på GitHub → mappa <code>data</code> → <code>tests.json</code> → blyant-ikonet, lim inn alt og «Commit changes». (Eller last opp fila du får under.)</li>
+      ${photo ? `<li>Last opp bildet i mappa <code>bilder</code> med navnet <code>${esc(photo.split('/')[1])}</code>.</li>` : ''}
+      <li>Siden oppdateres etter et minutt eller to.</li></ol></div>
+    <button type="button" class="btn gold" id="copy">Kopier tests.json</button>
+    <button type="button" class="btn" id="dlj">Last ned tests.json</button>
+    ${photo ? '<button type="button" class="btn" id="dli">Last ned bildet med riktig navn</button>' : ''}`;
+  $('#copy').onclick = async () => { try { await navigator.clipboard.writeText(json); $('#copy').textContent = 'Kopiert ✓'; } catch { $('#copy').textContent = 'Kunne ikke kopiere – bruk nedlasting'; } };
+  $('#dlj').onclick = () => download('tests.json', new Blob([json], {type: 'application/json'}));
+  if (photo) $('#dli').onclick = () => download(photo.split('/')[1], photoFile);
+  out.scrollIntoView({behavior: 'smooth', block: 'start'});
+});
+}
+</script>
+</body>
+</html>
