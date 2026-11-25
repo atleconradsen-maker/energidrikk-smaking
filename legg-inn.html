@@ -117,6 +117,7 @@ input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--gold);ou
 
 <script src="config.js"></script>
 <script src="parse.js"></script>
+<script src="badges.js"></script>
 <script>
 {
 const $ = s => document.querySelector(s);
@@ -125,7 +126,7 @@ const cfg = window.EDConfig || {};
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
 const fmt = v => v == null ? '–' : (Math.round(v * 10) / 10).toFixed(1).replace('.', ',');
 const state = { testere: [], bilde: null, confirmed: null, brandNew: null };
-let drinks = [], names = [];
+let drinks = [], names = [], allRatings = [];
 
 if (!cfg.SCRIPT_URL) $('#setup').classList.remove('hidden');
 
@@ -144,6 +145,7 @@ function gviz() {
 }
 gviz().then(t => {
   const ratings = EDParse.rowsToRatings(EDParse.gvizToRows(t));
+  allRatings = ratings;
   drinks = EDParse.toDrinks(ratings).sort((a, b) => b.scores.length - a.scores.length);
   const count = new Map();
   ratings.forEach(r => { const k = r.name.toLowerCase(); if (r.name !== 'Anonym') count.set(k, {name: r.name, n: ((count.get(k) || {}).n || 0) + 1}); });
@@ -294,6 +296,29 @@ $('#testers').addEventListener('input', e => { if (e.target.dataset.note) state.
 drawTesters();
 const me = store.get('ed-me'); if (me) addTester(me);
 
+// ----- nye badges etter lagring -----
+function celebrate(body, drikk) {
+  const B = window.EDBadges; if (!B) return;
+  const d = new Date(), p2 = n => String(n).padStart(2, '0');
+  const time = `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+  const num = v => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : null; };
+  const rows = body.testere.map(t => ({time, week: '', drink: drikk, brand: body.test.merke, price: num(body.test.pris), ml: num(body.test.ml), name: t.navn, taste: t.smak, value: t.verdi, note: (t.kommentar || '').trim(), photo: body.bilde ? 'x' : null}));
+  const before = B.peopleStats(allRatings), after = B.peopleStats(allRatings.concat(rows));
+  allRatings = allRatings.concat(rows);
+  const wins = [];
+  for (const t of body.testere) {
+    const k = B.nk(t.navn), a = after.find(p => p.key === k), b = before.find(p => p.key === k);
+    if (!a) continue;
+    const had = new Set(b ? B.badgesOf(b).filter(x => x.done).map(x => x.key) : []);
+    B.badgesOf(a).filter(x => x.done && !had.has(x.key)).forEach(x => wins.push({who: t.navn, b: x}));
+  }
+  if (!wins.length) return;
+  B.sheet(`<div class="ed-big"><div class="e">🎉</div><div class="nm">Ny${wins.length > 1 ? 'e' : ''} badge${wins.length > 1 ? 's' : ''}!</div></div>
+    <div class="blist">${wins.map(w => B.badgeHtml({...w.b, how: `${w.who} · ${w.b.how}`})).join('')}</div>
+    <p class="ksub" style="text-align:center;margin-top:16px"><a href="./" style="color:var(--gold)">Se profilen på forsiden</a></p>`);
+  B.confetti();
+}
+
 // ----- lagre -----
 function show(kind, html) { const m = $('#msg'); m.className = 'msg ' + kind; m.innerHTML = html; m.scrollIntoView({behavior: 'smooth', block: 'center'}); }
 $('#f').addEventListener('submit', async e => {
@@ -318,6 +343,7 @@ $('#f').addEventListener('submit', async e => {
     const res = await r.json();
     if (!res.ok) throw new Error(res.feil || 'Ukjent feil');
     show('ok', `<b>Takk!</b> ${esc(res.drikk || body.test.drikk)} er lagret. <a href="./">Se topplista</a>`);
+    celebrate(body, res.drikk || body.test.drikk);
     state.testere.forEach(t => { t.smak = t.verdi = null; t.kommentar = ''; });
     state.bilde = null; $('#photo').querySelectorAll('img,.x').forEach(n => n.remove()); $('#bilde').value = '';
     ['#merke', '#type', '#pris', '#ml'].forEach(s => $(s).value = ''); state.brandNew = state.confirmed = null; refreshBrand(); drawTesters();
