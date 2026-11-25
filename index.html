@@ -193,7 +193,7 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
 
   <footer>
     <span>Totalscoren er snittet av smak og smak vs. pris. Alle kan legge inn en test, og hver vurdering teller likt.</span>
-    <span id="updated"></span>
+    <span><span id="updated"></span> <button type="button" data-welcome style="background:none;border:0;color:var(--gold);font:inherit;font-weight:700;cursor:pointer;padding:4px 0">Slik funker det</button></span>
   </footer>
 </div>
 
@@ -354,6 +354,7 @@ document.addEventListener('click', e => {
   const pp = e.target.closest('[data-person]'); if (pp) { window.EDBadges.openProfile(pp.dataset.person, ratings); return; }
   const lk = e.target.closest('[data-like]'); if (lk) { toggleLike(lk.dataset.like); return; }
   if (e.target.closest('[data-rename]')) { askName(); return; }
+  if (e.target.closest('[data-welcome]')) { window.EDBadges.welcome(true); return; }
   if (e.target.closest('[data-info]')) window.EDBadges.openInfo(ratings);
 });
 
@@ -390,7 +391,8 @@ async function load() {
     nb.classList.toggle('hidden', !!ratings.length);
     nb.innerHTML = ratings.length ? '' : `<span><b>Ingen tester ennå.</b> Bli den første, og ta badgen «Første slurk».</span><a class="add" href="legg-inn.html">+ Legg inn første test</a>`;
     $('#updated').textContent = ratings.length ? `${tests.length} drikker · ${ratings.length} vurderinger` : '';
-    if (ratings.length) setTimeout(() => window.EDBadges.monthReveal(ratings), 600);
+    window.__edRatings = ratings;
+    setTimeout(() => { const B = window.EDBadges, cel = () => B.celebrateNew(ratings); if (B.welcome(false, cel)) return; if (!B.monthReveal(ratings)) cel(); else setTimeout(cel, 8000); }, 1200);
   } catch {
     tests = []; ratings = []; nb.classList.remove('hidden'); nb.innerHTML = '<span>Kunne ikke hente testene. Prøv å laste siden på nytt.</span>';
   }

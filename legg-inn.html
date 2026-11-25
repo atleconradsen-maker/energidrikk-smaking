@@ -156,7 +156,7 @@ function gviz() {
 }
 gviz().then(t => {
   const ratings = EDParse.rowsToRatings(EDParse.gvizToRows(t));
-  allRatings = ratings;
+  allRatings = ratings; window.__edRatings = ratings;
   drinks = EDParse.toDrinks(ratings).sort((a, b) => b.scores.length - a.scores.length);
   const count = new Map();
   ratings.forEach(r => { const k = r.name.toLowerCase(); if (r.name !== 'Anonym') count.set(k, {name: r.name, n: ((count.get(k) || {}).n || 0) + 1}); });
@@ -356,6 +356,8 @@ function celebrate(body, drikk) {
   const rows = body.testere.map(t => ({time, week: '', drink: drikk, brand: body.test.merke, price: num(body.test.pris), ml: num(body.test.ml), name: t.navn, taste: t.smak, value: t.verdi, note: (t.kommentar || '').trim(), photo: body.bilde ? 'x' : null}));
   const before = B.peopleStats(allRatings), after = B.peopleStats(allRatings.concat(rows));
   allRatings = allRatings.concat(rows);
+  const meK = B.nk(store.get('ed-me') || ''), mp = after.find(p => p.key === meK);
+  if (mp) store.set('ed-badges-' + meK, JSON.stringify(B.badgesOf(mp).filter(x => x.done).map(x => x.key)));
   const wins = [];
   for (const t of body.testere) {
     const k = B.nk(t.navn), a = after.find(p => p.key === k), b = before.find(p => p.key === k);

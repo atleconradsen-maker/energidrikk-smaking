@@ -190,6 +190,12 @@
 .ed-big{text-align:center;padding:10px 0}.ed-big .e{font-size:64px;line-height:1.1}
 .ed-big .nm{font-family:Anton,sans-serif;font-size:36px;text-transform:uppercase;margin:6px 0}
 .ed-confetti{position:fixed;inset:0;pointer-events:none;z-index:80}
+.ed-hero{font-size:44px;text-align:center;letter-spacing:6px;margin:4px 0 6px}
+.ed-intro h3{text-align:center;font-size:28px;line-height:1.05;padding:0 30px}
+.ed-btns{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:18px}
+.ed-cta{width:100%;min-height:52px;border:0;border-radius:16px;background:var(--gold);color:#1a1408;font:800 17px Inter,system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 0 #9c844f}
+.ed-cta:active{transform:translateY(2px);box-shadow:0 2px 0 #9c844f}
+.ed-link{background:none;border:0;color:var(--gold);font:inherit;font-weight:700;cursor:pointer;padding:8px;text-decoration:underline;text-underline-offset:4px}
 .av.yr{position:relative}.av .tro{position:absolute;right:-6px;bottom:-4px;background:var(--gold);color:#1a1408;font-family:Anton,sans-serif;font-size:11px;border-radius:8px;padding:1px 5px;box-shadow:0 0 0 2px var(--bg)}
 `;
   const st = document.createElement('style'); st.textContent = css; document.head.append(st);
@@ -265,14 +271,60 @@
         : `<div class="ksub">Første vinner kåres 1. januar ${new Date().getFullYear() + 1}.</div>`}`);
   }
 
+  // Velkomst første gang man er inne: forklarer badges og kåringer (som på Kebabtesten)
+  function welcome(force, after) {
+    try { if (!force && localStorage.getItem('ed-intro-v1')) return false; localStorage.setItem('ed-intro-v1', '1'); } catch { if (!force) return false; }
+    // Første besøk: ikke vis månedens vinner i tillegg
+    try { localStorage.setItem('ed-month-seen', prevMonth()); } catch {}
+    const row = (icon, name, how) => badgeHtml({icon, name, how, done: true});
+    let done = false;
+    sheet(`<div class="ed-intro"><div class="ed-hero" aria-hidden="true">⚡🏅🤠</div>
+      <h3>Velkommen til Energidrikk Smaking!</h3>
+      <p class="ksub" style="text-align:center;margin:0 0 14px">Her tester vi energidrikker, gir batterier og samler badges. Slik funker det:</p>
+      <div class="blist">
+        ${row('🥤', 'Legg inn tester', 'Hver gang du drikker en: gi smak og smak vs. pris 1–10 batterier')}
+        ${row('🏅', 'Samle badges', `${ALL.length} badges å jakte på, fra «Første slurk» til «Hjertebank». De er dine for alltid`)}
+        ${row('👍', 'Gi cred', 'Lik kommentarer du er enig i. Flest likes blir «Folkets stemme»')}
+        ${row('🤠', 'Bli månedens koffeinkonge/-dronning', 'Mest bidrag i måneden vinner. En test gir 3 poeng og en kommentar 1')}
+        ${row('🏆', 'Bli årets', 'Årets vinner får et merke med årstallet (som ’26) på profilbildet for alltid')}
+      </div>
+      <div class="ed-btns"><button type="button" class="ed-cta" data-wgo>Kom i gang</button><button type="button" class="ed-link" data-winfo>Se alle badges</button></div></div>`,
+      (ov, close) => {
+        const fin = () => { if (done) return; done = true; if (after) setTimeout(after, 400); };
+        ov.querySelector('[data-wgo]').addEventListener('click', () => { close(); fin(); });
+        ov.querySelector('[data-winfo]').addEventListener('click', () => { done = true; close(); openInfo(root.__edRatings || []); });
+        new MutationObserver((_, mo) => { if (!ov.isConnected) { mo.disconnect(); fin(); } }).observe(document.body, {childList: true});
+        ov.querySelector('[data-wgo]').focus();
+      });
+    return true;
+  }
+
+  // Feiring når du har låst opp noe nytt siden sist du var innom
+  function celebrateNew(ratings) {
+    let me = ''; try { me = localStorage.getItem('ed-me') || ''; } catch {}
+    if (!me) return;
+    const p = peopleStats(ratings).find(x => x.key === nk(me)); if (!p) return;
+    const got = badgesOf(p).filter(b => b.done), k = 'ed-badges-' + nk(me);
+    let seen; try { seen = JSON.parse(localStorage.getItem(k) || 'null'); } catch { seen = null; }
+    try { localStorage.setItem(k, JSON.stringify(got.map(b => b.key))); } catch {}
+    const fresh = seen ? got.filter(b => !seen.includes(b.key)) : got;
+    if (!fresh.length) return;
+    sheet(`<div class="ed-big"><div class="e">${fresh.slice(0, 4).map(b => b.icon).join(' ')}</div><div class="nm">${fresh.length === 1 ? 'Ny badge!' : fresh.length + ' nye badges!'}</div></div>
+      <div class="blist">${fresh.map(b => badgeHtml(b)).join('')}</div>
+      <div class="ed-btns"><button type="button" class="ed-link" data-wme>Se profilen din</button></div>`,
+      (ov, close) => ov.querySelector('[data-wme]').addEventListener('click', () => { close(); openProfile(me, ratings); }));
+    confetti();
+  }
+
   // Vises én gang per måned når forrige måned har en vinner
   function monthReveal(ratings) {
     const pm = prevMonth(), w = pointsIn(ratings, pm);
-    if (!w.length) return;
-    try { if (localStorage.getItem('ed-month-seen') === pm) return; localStorage.setItem('ed-month-seen', pm); } catch { return; }
+    if (!w.length) return false;
+    try { if (localStorage.getItem('ed-month-seen') === pm) return false; localStorage.setItem('ed-month-seen', pm); } catch { return false; }
     sheet(`<div class="ed-big"><div class="e">🤠</div><div class="lbl2" style="margin:6px 0 0">Månedens koffeinkonge / -dronning · ${esc(monthName(pm))}</div>
       <div class="nm">${esc(w.map(p => p.name).join(' og '))}</div><div class="ksub">${w[0].pts} poeng${w.length > 1 ? ' hver' : ''}. Ny måned, nye muligheter. Legg inn testene dine!</div></div>`);
     confetti();
+    return true;
   }
 
   // ---------- batterimåler (1–10) ----------
@@ -290,5 +342,5 @@
     return `<span class="bm ${size}" role="img" aria-label="${v == null ? 'Ingen score' : f1(v) + ' av 10 batterier'}">${h}${showNum ? `<span class="num">${f1(v)}</span>` : ''}</span>`;
   }
 
-  root.EDBadges = { meter, setLikes: m => { LIKES = m || new Map(); }, likesOf, BADGES, badgesOf, peopleStats, titles, pointsIn, prevMonth, monthName, yearWinners, openProfile, openInfo, monthReveal, confetti, sheet, badgeHtml, avatarHtml, nk };
+  root.EDBadges = { welcome, celebrateNew, meter, setLikes: m => { LIKES = m || new Map(); }, likesOf, BADGES, badgesOf, peopleStats, titles, pointsIn, prevMonth, monthName, yearWinners, openProfile, openInfo, monthReveal, confetti, sheet, badgeHtml, avatarHtml, nk };
 })(typeof self !== 'undefined' ? self : this);
