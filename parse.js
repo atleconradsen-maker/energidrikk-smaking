@@ -76,7 +76,7 @@
   // eksempel.json (én post per drikk med scores-liste) -> vurderinger
   function jsonToRatings(list) {
     return (Array.isArray(list) ? list : []).flatMap((d, i) => (d.scores || []).map(s => ({
-      time: String(d.week || '') + '-' + String(i).padStart(3, '0'), week: String(d.week || ''), drink: String(d.drink || ''), brand: String(d.brand || ''),
+      time: String(d.date || '') + ' ' + String(99 - i).padStart(2, '0'), week: String(d.week || ''), drink: String(d.drink || ''), brand: String(d.brand || ''),
       price: toNum(d.price), ml: toNum(d.ml), name: String(s.name || 'Anonym'), taste: score(s.taste), value: score(s.value),
       note: s.name === (d.scores[0] || {}).name ? String(d.notes || '') : '', photo: imageUrl(d.photo)
     })));

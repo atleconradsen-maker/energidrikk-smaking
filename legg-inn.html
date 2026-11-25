@@ -22,7 +22,7 @@ h1{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:28px;margin:0;t
 input,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;width:100%}
 input::placeholder,textarea::placeholder{color:#6f84b3}
 input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
-.two{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .two label{font-size:12px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;gap:6px}
 .hint{font-size:14px;border-radius:12px;padding:10px 12px;margin-top:8px}
 .hint.known{background:#14301f;color:var(--good)}
@@ -64,7 +64,7 @@ input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--gold);ou
 .msg.ok{background:#14301f;color:var(--good)}
 .msg a{color:var(--gold)}
 .hidden{display:none!important}
-@media(max-width:420px){.two{grid-template-columns:repeat(2,minmax(0,1fr))}.two label:first-child{grid-column:1/-1}}
+#brands,#types{margin-top:10px}
 </style>
 </head>
 <body>
@@ -78,14 +78,20 @@ input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--gold);ou
   <div class="msg err hidden" id="setup">Innleggingen er ikke koblet til regnearket ennå. Prøv igjen litt senere.</div>
 
   <div>
-    <label class="lbl" for="drikk">Hvilken drikk?</label>
-    <input id="drikk" maxlength="80" placeholder="Skriv navnet, f.eks. Monster Ultra White" enterkeyhint="next">
-    <div class="sugg hidden" id="sugg"></div>
+    <label class="lbl" for="merke">Merke</label>
+    <input id="merke" maxlength="40" placeholder="F.eks. Monster, Red Bull, Burn" enterkeyhint="next">
+    <div class="names" id="brands"></div>
+    <div class="hint hidden" id="bhint"></div>
+  </div>
+
+  <div class="hidden" id="typeBox">
+    <label class="lbl" for="type">Hvilken type?</label>
+    <input id="type" maxlength="60" placeholder="F.eks. Ultra White, Original, Zero" enterkeyhint="next">
+    <div class="names" id="types"></div>
     <div class="hint hidden" id="hint"></div>
   </div>
 
   <div class="two">
-    <label>Merke<input id="merke" maxlength="60" placeholder="Monster"></label>
     <label>Pris (kr)<input id="pris" type="number" inputmode="decimal" step="0.1" min="0" placeholder="29,90"></label>
     <label>Størrelse (ml)<input id="ml" type="number" inputmode="numeric" min="0" placeholder="500"></label>
   </div>
@@ -118,7 +124,7 @@ const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const cfg = window.EDConfig || {};
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
 const fmt = v => v == null ? '–' : (Math.round(v * 10) / 10).toFixed(1).replace('.', ',');
-const state = { testere: [], bilde: null, confirmed: null };
+const state = { testere: [], bilde: null, confirmed: null, brandNew: null };
 let drinks = [], names = [];
 
 if (!cfg.SCRIPT_URL) $('#setup').classList.remove('hidden');
@@ -142,46 +148,92 @@ gviz().then(t => {
   const count = new Map();
   ratings.forEach(r => { const k = r.name.toLowerCase(); if (r.name !== 'Anonym') count.set(k, {name: r.name, n: ((count.get(k) || {}).n || 0) + 1}); });
   names = [...count.values()].sort((a, b) => b.n - a.n).map(x => x.name);
-  drawNames(); refreshDrink();
+  buildBrands(); drawNames(); refreshBrand();
 }).catch(() => {});
 
-// ----- drikk: forslag og sjekk mot dubletter -----
-const drikkIn = $('#drikk');
-function matchDrink(v) {
-  const k = EDParse.drinkKey(v);
+// ----- merke først, så type, og sjekk mot dubletter -----
+const DEFAULT_BRANDS = ['Monster', 'Red Bull', 'Burn', 'Celsius', 'Nocco', 'Battery', 'Prime', 'Rockstar'];
+const K = EDParse.drinkKey;
+const merkeIn = $('#merke'), typeIn = $('#type');
+let brands = DEFAULT_BRANDS.slice();
+function buildBrands() {
+  const count = new Map();
+  drinks.forEach(d => { if (d.brand) { const k = K(d.brand); const c = count.get(k) || {name: d.brand, n: 0}; c.n += d.scores.length; count.set(k, c); } });
+  const known = [...count.values()].sort((a, b) => b.n - a.n).map(x => x.name);
+  brands = [...known, ...DEFAULT_BRANDS.filter(b => !count.has(K(b)))];
+}
+function stripBrand(name, brand) {
+  const bk = K(brand), w = String(name).trim().split(/\s+/);
+  if (!bk || !K(name).startsWith(bk)) return String(name).trim();
+  for (let i = 1; i <= w.length; i++) if (K(w.slice(0, i).join('')) === bk) return w.slice(i).join(' ');
+  return String(name).trim();
+}
+function brandMatch() {
+  const v = merkeIn.value.trim(), k = K(v);
+  if (!k) return {mode: 'none'};
+  const exact = brands.find(b => K(b) === k);
+  if (exact) return {mode: 'known', name: exact};
+  if (state.brandNew === k) return {mode: 'new', name: v};
+  const sim = brands.find(b => EDParse.similarDrink(b, v));
+  return sim ? {mode: 'similar', name: sim} : {mode: 'new', name: v};
+}
+const brandName = () => { const m = brandMatch(); return m.mode === 'known' || m.mode === 'new' ? m.name : ''; };
+function fullName() {
+  const b = brandName(), t = typeIn.value.trim();
+  if (!b || !t) return '';
+  return K(t).startsWith(K(b)) ? t : `${b} ${t}`;
+}
+function matchDrink() {
+  const v = fullName(), k = K(v);
   if (!k) return {mode: 'none'};
   const exact = drinks.find(d => d.key === k);
   if (exact) return {mode: 'known', drink: exact};
-  if (state.confirmed && state.confirmed.typed === k) return state.confirmed.as ? {mode: 'known', drink: state.confirmed.as} : {mode: 'new'};
+  if (state.confirmed === k) return {mode: 'new'};
   const sim = drinks.find(d => EDParse.similarDrink(d.drink, v));
   return sim ? {mode: 'similar', drink: sim} : {mode: 'new'};
 }
 function fillFrom(d) {
-  if (!$('#merke').value && d.brand) $('#merke').value = d.brand;
   if (!$('#ml').value && d.ml) $('#ml').value = d.ml;
   if (!$('#pris').value && d.price != null) $('#pris').value = d.price;
 }
-function refreshDrink() {
-  const v = drikkIn.value.trim(), hint = $('#hint'), sugg = $('#sugg');
-  const k = EDParse.drinkKey(v);
-  const list = k ? drinks.filter(d => d.key.includes(k) || EDParse.similarDrink(d.drink, v)).slice(0, 5) : [];
-  const m = matchDrink(v);
-  sugg.classList.toggle('hidden', !list.length || m.mode === 'known');
-  sugg.innerHTML = list.map((d, i) => `<button type="button" data-i="${drinks.indexOf(d)}"><span>${esc(d.drink)}</span><small>${d.scores.length} vurd. · ${fmt(d.total)}</small></button>`).join('');
-  hint.className = 'hint ' + m.mode;
-  hint.classList.toggle('hidden', m.mode === 'none');
-  if (m.mode === 'known') { hint.innerHTML = `Testet før: <b>${esc(m.drink.drink)}</b>. Testen din legges til den.`; fillFrom(m.drink); }
-  else if (m.mode === 'similar') hint.innerHTML = `Mener du <b>${esc(m.drink.drink)}</b>?<div class="row"><button type="button" class="pill gold" data-yes>Ja, det er den</button><button type="button" class="pill" data-no>Nei, det er en ny drikk</button></div>`;
-  else if (m.mode === 'new') hint.innerHTML = 'Ny drikk. Den blir lagt til på topplista.';
+function refreshBrand() {
+  const v = merkeIn.value.trim(), k = K(v), m = brandMatch(), bh = $('#bhint');
+  const list = brands.filter(b => !k || K(b).includes(k) || EDParse.similarDrink(b, v)).filter(b => K(b) !== k).slice(0, 8);
+  $('#brands').innerHTML = list.map(b => `<button type="button" class="pill" data-brand="${esc(b)}">${esc(b)}</button>`).join('');
+  bh.className = 'hint ' + m.mode;
+  bh.classList.toggle('hidden', m.mode !== 'similar');
+  if (m.mode === 'similar') bh.innerHTML = `Mener du <b>${esc(m.name)}</b>?<div class="row"><button type="button" class="pill gold" data-byes>Ja</button><button type="button" class="pill" data-bno>Nei, det er et nytt merke</button></div>`;
+  $('#typeBox').classList.toggle('hidden', !brandName());
+  refreshType();
   return m;
 }
-drikkIn.addEventListener('input', () => { state.confirmed = null; refreshDrink(); });
-$('#sugg').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (!b) return; const d = drinks[+b.dataset.i]; drikkIn.value = d.drink; refreshDrink(); });
-$('#hint').addEventListener('click', e => {
-  const k = EDParse.drinkKey(drikkIn.value);
-  if (e.target.closest('[data-yes]')) { const m = matchDrink(drikkIn.value); drikkIn.value = m.drink.drink; state.confirmed = null; refreshDrink(); }
-  else if (e.target.closest('[data-no]')) { state.confirmed = {typed: k, as: null}; refreshDrink(); }
+function refreshType() {
+  const b = brandName(), hint = $('#hint');
+  const bk = K(b), tk = K(typeIn.value);
+  const own = b ? drinks.filter(d => K(d.brand) === bk || d.key.startsWith(bk)) : [];
+  const types = own.map(d => ({d, t: stripBrand(d.drink, b)})).filter(x => x.t && (!tk || K(x.t).includes(tk) || EDParse.similarDrink(x.t, typeIn.value)) && K(x.t) !== tk).slice(0, 8);
+  $('#types').innerHTML = types.map(x => `<button type="button" class="pill" data-type="${esc(x.t)}">${esc(x.t)} <small>${fmt(x.d.total)}</small></button>`).join('');
+  const m = matchDrink();
+  hint.className = 'hint ' + m.mode;
+  hint.classList.toggle('hidden', m.mode === 'none');
+  if (m.mode === 'known') { hint.innerHTML = `Testet før: <b>${esc(m.drink.drink)}</b> (${m.drink.scores.length} vurd.). Testen din legges til den.`; fillFrom(m.drink); }
+  else if (m.mode === 'similar') hint.innerHTML = `Mener du <b>${esc(m.drink.drink)}</b>?<div class="row"><button type="button" class="pill gold" data-yes>Ja, det er den</button><button type="button" class="pill" data-no>Nei, det er en ny type</button></div>`;
+  else if (m.mode === 'new') hint.innerHTML = `Ny drikk: <b>${esc(fullName())}</b>. Den blir lagt til på topplista.`;
+  return m;
+}
+merkeIn.addEventListener('input', () => { state.brandNew = null; state.confirmed = null; refreshBrand(); });
+typeIn.addEventListener('input', () => { state.confirmed = null; refreshType(); });
+$('#brands').addEventListener('click', e => { const b = e.target.closest('[data-brand]'); if (!b) return; merkeIn.value = b.dataset.brand; state.confirmed = null; refreshBrand(); typeIn.focus(); });
+$('#types').addEventListener('click', e => { const b = e.target.closest('[data-type]'); if (!b) return; typeIn.value = b.dataset.type; refreshType(); });
+$('#bhint').addEventListener('click', e => {
+  if (e.target.closest('[data-byes]')) { merkeIn.value = brandMatch().name; refreshBrand(); typeIn.focus(); }
+  else if (e.target.closest('[data-bno]')) { state.brandNew = K(merkeIn.value); refreshBrand(); typeIn.focus(); }
 });
+$('#hint').addEventListener('click', e => {
+  if (e.target.closest('[data-yes]')) { const m = matchDrink(); typeIn.value = stripBrand(m.drink.drink, brandName()) || m.drink.drink; refreshType(); }
+  else if (e.target.closest('[data-no]')) { state.confirmed = K(fullName()); refreshType(); }
+});
+refreshBrand();
 
 // ----- bilde (gjøres mindre i nettleseren før opplasting) -----
 $('#bilde').addEventListener('change', async e => {
@@ -247,13 +299,16 @@ function show(kind, html) { const m = $('#msg'); m.className = 'msg ' + kind; m.
 $('#f').addEventListener('submit', async e => {
   e.preventDefault();
   if (!cfg.SCRIPT_URL) return show('err', 'Innleggingen er ikke koblet til regnearket ennå.');
-  const m = refreshDrink();
-  if (m.mode === 'none') { drikkIn.focus(); return show('err', 'Skriv inn navnet på drikken.'); }
-  if (m.mode === 'similar') return show('err', `Er «${esc(drikkIn.value.trim())}» det samme som «${esc(m.drink.drink)}»? Svar ja eller nei under navnet.`);
+  const bm = refreshBrand();
+  if (bm.mode === 'none') { merkeIn.focus(); return show('err', 'Velg eller skriv inn merket først.'); }
+  if (bm.mode === 'similar') return show('err', `Er «${esc(merkeIn.value.trim())}» det samme som «${esc(bm.name)}»? Svar ja eller nei under merket.`);
+  if (!typeIn.value.trim()) { typeIn.focus(); return show('err', 'Skriv hvilken type det er, f.eks. Original.'); }
+  const m = refreshType();
+  if (m.mode === 'similar') return show('err', `Er «${esc(fullName())}» det samme som «${esc(m.drink.drink)}»? Svar ja eller nei under typen.`);
   if (!state.testere.length) return show('err', 'Legg til minst én testperson.');
   if (!state.testere.some(t => t.smak != null || t.verdi != null)) return show('err', 'Gi minst én score.');
   const body = {
-    test: {drikk: m.mode === 'known' ? m.drink.drink : drikkIn.value.trim(), merke: $('#merke').value.trim(), pris: $('#pris').value, ml: $('#ml').value},
+    test: {drikk: m.mode === 'known' ? m.drink.drink : fullName(), merke: brandName(), pris: $('#pris').value, ml: $('#ml').value},
     testere: state.testere.filter(t => t.smak != null || t.verdi != null),
     bilde: state.bilde
   };
@@ -265,7 +320,7 @@ $('#f').addEventListener('submit', async e => {
     show('ok', `<b>Takk!</b> ${esc(res.drikk || body.test.drikk)} er lagret. <a href="./">Se topplista</a>`);
     state.testere.forEach(t => { t.smak = t.verdi = null; t.kommentar = ''; });
     state.bilde = null; $('#photo').querySelectorAll('img,.x').forEach(n => n.remove()); $('#bilde').value = '';
-    drikkIn.value = ''; ['#merke', '#pris', '#ml'].forEach(s => $(s).value = ''); refreshDrink(); drawTesters();
+    ['#merke', '#type', '#pris', '#ml'].forEach(s => $(s).value = ''); state.brandNew = state.confirmed = null; refreshBrand(); drawTesters();
   } catch (err) {
     show('err', 'Kunne ikke lagre: ' + esc(err.message || err) + '. Prøv igjen.');
   } finally { btn.disabled = false; btn.textContent = 'Lagre test'; }

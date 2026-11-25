@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Energidrikk Smaking</title>
-<meta name="description" content="Ukentlig energidrikktest: smak og smak vs. pris, 1–10. Toppliste, kåringer og dommerpanel.">
+<meta name="description" content="Energidrikktest: smak og smak vs. pris, 1–10. Legg inn din egen test, se topplista og kåringene.">
 <meta property="og:title" content="Energidrikk Smaking">
 <meta property="og:image" content="logo.jpg">
 <link rel="icon" href="logo.jpg">
@@ -188,13 +188,12 @@ const nR = t => t.scores.length + (t.scores.length === 1 ? ' vurdering' : ' vurd
 const avg = a => { a = a.filter(x => x != null); return a.length ? a.reduce((s, x) => s + x, 0) / a.length : null; };
 const f1 = v => v == null ? '–' : (Math.round(v * 10) / 10).toFixed(1).replace('.', ',');
 const kr = v => v == null ? '' : v.toLocaleString('nb-NO', {maximumFractionDigits: 2}) + '\u00a0kr';
-const wk = w => { const m = /^(\d{4})-W(\d{1,2})$/.exec(w || ''); return m ? `Uke ${+m[2]} · ${m[1]}` : 'Ukjent uke'; };
-const wkShort = w => { const m = /^(\d{4})-W(\d{1,2})$/.exec(w || ''); return m ? `uke ${+m[2]}` : ''; };
+const MND = ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des'];
+const dato = t => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t || ''); return m ? `${+m[3]}. ${MND[+m[2] - 1]} ${m[1]}` : ''; };
 const CAN = `<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8l1 2v14l-1 2H8l-1-2V5z"/><path d="M7 7h10M7 17h10"/><path d="M13 9l-2.5 3.5h3L11 16"/></svg>`;
 
-let tests = [], sortKey = 'total', weekFilter = 'all', demo = false;
+let tests = [], sortKey = 'total', allSort = 'time', demo = false;
 
-const weeks = () => [...new Set(tests.map(t => t.week).filter(Boolean))].sort().reverse();
 const byTotal = (a, b) => (b.total ?? -1) - (a.total ?? -1);
 const perL = v => v == null ? '' : kr(Math.round(v * 10) / 10) + '/l';
 const metaLine = t => [t.brand, t.ml ? t.ml + '\u00a0ml' : '', kr(t.price), perL(t.perL)].filter(Boolean).join(' · ');
@@ -206,10 +205,8 @@ function renderHero() {
   const box = $('#siste');
   if (!tests.length) { box.innerHTML = `<div class="empty"><b>Ingen tester publisert ennå</b>Første test dukker opp her så snart den er lagt inn.</div>`; return; }
   const t = [...tests].sort(byTime)[0];
-  const w = t.week;
-  const list = [t, ...tests.filter(x => x !== t && x.week === w).sort(byTotal)];
   box.innerHTML = `<div class="hero">
-    <div class="shot">${t.photo ? img(t, 'photo') : ''}<div class="ph">${CAN}Bilde av boksen</div><div class="badge">${esc(wkShort(t.week))} · ukens drikk</div></div>
+    <div class="shot">${t.photo ? img(t, 'photo') : ''}<div class="ph">${CAN}Bilde av boksen</div>${dato(t.time) ? `<div class="badge">${esc(dato(t.time))}</div>` : ''}</div>
     <div class="hero-info">
       <div><div class="lbl" style="color:var(--gold)">Siste test</div>
         <h1 class="h h1">${esc(t.drink)}</h1><div class="meta">${esc(metaLine(t))}</div></div>
@@ -220,7 +217,7 @@ function renderHero() {
       ${t.scores.length > 8 ? `<div class="meta">+ ${t.scores.length - 8} til · ${nR(t)}</div>` : ''}
       ${t.notes.length ? `<p class="quote">${quote(t)}</p>` : ''}
     </div></div>
-    ${list.length > 1 ? `<div class="also" style="margin-top:22px"><div class="lbl">Også testet ${esc(wkShort(w))}</div><div class="row">${list.slice(1).map(x => `<span class="chip">${esc(x.drink)} <b>${f1(x.total)}</b></span>`).join('')}</div></div>` : ''}`;
+`;
 }
 
 function best(list, key, low) {
@@ -232,7 +229,7 @@ function renderAwards() {
   const aw = [
     ['Smakskongen', best(tests, 'taste'), 'taste', t => `Best smak av ${n} drikker · ${nR(t)}`],
     ['Mest for pengene', best(tests, 'value'), 'value', t => t.perL != null ? `${kr(Math.round(t.perL * 10) / 10)} per liter` : 'Høyest smak vs. pris'],
-    ['Totalvinner', best(tests, 'total'), 'total', t => [t.brand, wk(t.week)].filter(Boolean).join(' · ')],
+    ['Totalvinner', best(tests, 'total'), 'total', t => [t.brand, nR(t)].filter(Boolean).join(' · ')],
     ['Bunnskraperen', n > 1 ? best(tests, 'total', true) : null, 'total', t => 'Laveste totalscore så langt']
   ];
   $('#kaaringer').innerHTML = `<div class="sec-h"><h2 class="h">Kåringer</h2></div><div class="awards">${aw.map(([title, t, k, sub]) => t
@@ -245,7 +242,7 @@ function renderBoard() {
   const list = [...tests].sort((a, b) => sortKey === 'perL' ? (a.perL ?? 1e9) - (b.perL ?? 1e9) : (b[sortKey] ?? -1) - (a[sortKey] ?? -1));
   const colors = ['var(--gold)', '#d8dfec', '#d08a5a'];
   const rows = list.map((t, i) => `<div class="br"><span class="rk" style="${i < 3 ? 'color:' + colors[i] : ''}">${i + 1}</span>
-    <span class="nm"><b>${esc(t.drink)}</b><small>${esc([t.brand, wkShort(t.week)].filter(Boolean).join(' · '))}</small>
+    <span class="nm"><b>${esc(t.drink)}</b><small>${esc([t.brand, nR(t)].filter(Boolean).join(' · '))}</small>
       <small class="mob">Smak ${f1(t.taste)} · verdi ${f1(t.value)}${t.perL != null ? ' · ' + esc(perL(t.perL)) : ''}</small></span>
     <span class="c${sortKey === 'taste' ? ' sel' : ''}">${f1(t.taste)}</span><span class="c${sortKey === 'value' ? ' sel' : ''}">${f1(t.value)}</span>
     <span class="c${sortKey === 'perL' ? ' sel' : ''}">${t.perL != null ? esc(kr(Math.round(t.perL))) : '–'}</span><span class="tot">${f1(t.total)}</span></div>`).join('');
@@ -267,7 +264,7 @@ function renderBoard() {
     </div>
     <div class="side"><h2 class="h" style="font-size:28px;margin-bottom:4px">Mest aktive testere</h2>
       ${judges.map(j => `<div class="judge"><div class="av">${esc(j.name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase())}</div>
-        <div><div class="jn">${esc(j.name)}</div><div class="js">${j.n ? `Snitt gitt <b>${f1(j.avg)}</b> · ${j.n} tester${j.fav ? ' · favoritt: ' + esc(j.fav) : ''}` : 'Ingen tester ennå'}</div></div>
+        <div><div class="jn">${esc(j.name)}</div><div class="js">${j.n ? `Snitt gitt <b>${f1(j.avg)}</b> · ${j.n} ${j.n === 1 ? 'test' : 'tester'}${j.fav ? ' · favoritt: ' + esc(j.fav) : ''}` : 'Ingen tester ennå'}</div></div>
         ${j === kind ? '<span class="tag kind">SNILLEST</span>' : j === hard ? '<span class="tag hard">STRENGEST</span>' : ''}</div>`).join('')}
       <a class="cta" href="legg-inn.html">+ Legg inn ny test</a>
     </div>`;
@@ -275,16 +272,15 @@ function renderBoard() {
 
 function card(t) {
   return `<article class="card"><div class="im">${CAN}${img(t)}</div><div class="bd">
-    <div class="hd"><div><h3>${esc(t.drink)}</h3><div class="meta" style="font-size:13px">${esc(metaLine(t))}</div><div class="meta" style="font-size:13px">${esc(wk(t.week))} · ${nR(t)}</div></div><div class="tt">${f1(t.total)}</div></div>
+    <div class="hd"><div><h3>${esc(t.drink)}</h3><div class="meta" style="font-size:13px">${esc(metaLine(t))}</div><div class="meta" style="font-size:13px">${dato(t.time) ? 'Sist testet ' + esc(dato(t.time)) + ' · ' : ''}${nR(t)}</div></div><div class="tt">${f1(t.total)}</div></div>
     <div class="bars">${bar('Smak', t.taste, true)}${bar('Smak vs. pris', t.value)}</div>
     ${t.notes.length ? `<p class="quote" style="font-size:14px">${quote(t)}</p>` : ''}</div></article>`;
 }
 function renderAll() {
-  const ws = weeks();
-  if (weekFilter !== 'all' && !ws.includes(weekFilter)) weekFilter = 'all';
-  let html = `<div class="sec-h"><h2 class="h">Alle drikker</h2>${ws.length > 1 ? `<select id="wsel" aria-label="Velg uke"><option value="all">Alle uker</option>${ws.map(w => `<option value="${esc(w)}"${w === weekFilter ? ' selected' : ''}>${esc(wk(w))}</option>`).join('')}</select>` : ''}</div>`;
-  if (!tests.length) html += `<div class="empty"><b>Ingen drikker ennå</b>Alle tester samles her, uke for uke.</div>`;
-  const l = tests.filter(t => weekFilter === 'all' || t.week === weekFilter).sort((a, b) => b.week.localeCompare(a.week) || byTotal(a, b));
+  const opts = [['time', 'Sist testet'], ['total', 'Best'], ['name', 'A–Å']];
+  let html = `<div class="sec-h"><h2 class="h">Alle drikker</h2><div class="pills">${opts.map(([k, l]) => `<button class="pill${k === allSort ? ' on' : ''}" data-all="${k}">${l}</button>`).join('')}</div></div>`;
+  if (!tests.length) html += `<div class="empty"><b>Ingen drikker ennå</b>Alle drikker som er testet, samles her.</div>`;
+  const l = [...tests].sort(allSort === 'time' ? byTime : allSort === 'total' ? byTotal : (a, b) => a.drink.localeCompare(b.drink, 'nb'));
   if (l.length) html += `<div class="grid">${l.map(card).join('')}</div>`;
   $('#alle').innerHTML = html;
 }
@@ -293,9 +289,8 @@ function render() { renderHero(); renderAwards(); renderBoard(); renderAll(); }
 
 document.addEventListener('click', e => {
   const p = e.target.closest('[data-sort]'); if (p) { sortKey = p.dataset.sort; renderBoard(); return; }
-  const d = e.target.closest('[data-demo]'); if (d) { load(d.dataset.demo === '1'); }
+  const a = e.target.closest('[data-all]'); if (a) { allSort = a.dataset.all; renderAll(); }
 });
-document.addEventListener('change', e => { if (e.target.id === 'wsel') { weekFilter = e.target.value; renderAll(); } });
 
 // active nav link while scrolling
 const navLinks = [...document.querySelectorAll('#nav a')];
