@@ -64,6 +64,9 @@ input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--gold);ou
 .msg.ok{background:#14301f;color:var(--good)}
 .msg a{color:var(--gold)}
 .hidden{display:none!important}
+body:not(.started) .gate{display:none!important}
+.hello{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;font-size:16px}
+.hello button{background:none;border:0;color:var(--gold);font:inherit;font-weight:700;cursor:pointer;padding:6px}
 #brands,#types{margin-top:10px}
 </style>
 </head>
@@ -77,7 +80,14 @@ input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--gold);ou
 
   <div class="msg err hidden" id="setup">Innleggingen er ikke koblet til regnearket ennå. Prøv igjen litt senere.</div>
 
-  <div>
+  <div id="meBox">
+    <label class="lbl" for="meIn">Ditt kallenavn</label>
+    <div class="addrow"><input id="meIn" maxlength="40" placeholder="Hva kaller gjengen deg?" enterkeyhint="go"><button type="button" class="pill gold" id="meBtn">Start testen</button></div>
+    <div class="hint hidden" id="meHint"></div>
+  </div>
+  <div class="hello hidden" id="hello"></div>
+
+  <div class="gate">
     <label class="lbl" for="merke">Merke</label>
     <input id="merke" maxlength="40" placeholder="F.eks. Monster, Red Bull, Burn" enterkeyhint="next">
     <div class="names" id="brands"></div>
@@ -91,12 +101,12 @@ input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--gold);ou
     <div class="hint hidden" id="hint"></div>
   </div>
 
-  <div class="two">
+  <div class="two gate">
     <label>Pris (kr)<input id="pris" type="number" inputmode="decimal" step="0.1" min="0" placeholder="29,90"></label>
     <label>Størrelse (ml)<input id="ml" type="number" inputmode="numeric" min="0" placeholder="500"></label>
   </div>
 
-  <div>
+  <div class="gate">
     <span class="lbl">Bilde av boksen</span>
     <label class="photo" id="photo"><input type="file" accept="image/*" id="bilde" aria-label="Ta eller velg bilde av boksen">
       <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
@@ -104,16 +114,17 @@ input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--gold);ou
     </label>
   </div>
 
-  <div>
-    <span class="lbl">Hvem tester?</span>
-    <div class="addrow"><input id="nyNavn" maxlength="40" placeholder="Navnet ditt" enterkeyhint="done"><button type="button" class="pill gold" id="addBtn">Legg til</button></div>
-    <div class="names" id="names"></div>
+  <div class="gate">
+    <span class="lbl">Score</span>
     <div id="testers"></div>
+    <span class="lbl" style="margin-top:18px">Smakte flere?</span>
+    <div class="addrow"><input id="nyNavn" maxlength="40" placeholder="Kallenavnet til en som var med" enterkeyhint="done"><button type="button" class="pill gold" id="addBtn">Legg til</button></div>
+    <div class="names" id="names"></div>
   </div>
 
   <div class="msg hidden" id="msg"></div>
 </form>
-<div class="save"><button type="submit" form="f" id="saveBtn">Lagre test</button></div>
+<div class="save gate"><button type="submit" form="f" id="saveBtn">Lagre test</button></div>
 
 <script src="config.js"></script>
 <script src="parse.js"></script>
@@ -262,7 +273,6 @@ function resize(file, max, q) {
 function addTester(name) {
   name = String(name || '').trim().slice(0, 40);
   if (!name || state.testere.some(t => t.navn.toLowerCase() === name.toLowerCase())) return;
-  if (!state.testere.length) store.set('ed-me', name);
   state.testere.push({navn: name, smak: null, verdi: null, kommentar: ''});
   drawTesters(); drawNames();
 }
@@ -277,11 +287,12 @@ $('#nyNavn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preve
 
 function drawTesters() {
   const box = $('#testers');
-  if (!state.testere.length) { box.innerHTML = `<div class="tester empty-t"><b>Hvem smakte?</b>Skriv navnet ditt over, og legg til de andre som var med.</div>`; return; }
+  if (!state.testere.length) { box.innerHTML = `<div class="tester empty-t"><b>Ingen testere</b>Legg til deg selv eller andre under.</div>`; return; }
   box.innerHTML = state.testere.map((t, i) => {
     const tot = t.smak != null && t.verdi != null ? (t.smak + t.verdi) / 2 : (t.smak ?? t.verdi);
     const step = (k, l) => `<div class="step"><span>${l}</span><div class="ctl"><button type="button" data-i="${i}" data-k="${k}" data-d="-1" aria-label="${l} ned">−</button><output class="${t[k] == null ? 'empty' : ''}">${t[k] ?? '–'}</output><button type="button" data-i="${i}" data-k="${k}" data-d="1" aria-label="${l} opp">+</button></div></div>`;
     return `<div class="tester"><div class="th"><b>${esc(t.navn)}</b><span class="tot">${fmt(tot)}</span></div>
+      <div style="margin:4px 0 2px">${window.EDBadges ? window.EDBadges.meter(tot, 'sm still') : ''}</div>
       ${step('smak', 'Smak')}${step('verdi', 'Smak vs. pris')}
       <input data-note="${i}" maxlength="300" placeholder="Kommentar (valgfritt)" style="margin-top:10px" value="${esc(t.kommentar)}">
       <button type="button" class="rm" data-rm="${i}">Fjern ${esc(t.navn.split(' ')[0])}</button></div>`;
@@ -294,7 +305,47 @@ $('#testers').addEventListener('click', e => {
 });
 $('#testers').addEventListener('input', e => { if (e.target.dataset.note) state.testere[+e.target.dataset.note].kommentar = e.target.value; });
 drawTesters();
-const me = store.get('ed-me'); if (me) addTester(me);
+// ----- kallenavn først -----
+const meIn = $('#meIn');
+function startAs(name) {
+  name = String(name || '').trim().slice(0, 40);
+  if (!name) { meIn.focus(); return; }
+  const old = store.get('ed-me');
+  store.set('ed-me', name);
+  const i = old ? state.testere.findIndex(t => t.navn.toLowerCase() === old.toLowerCase()) : -1;
+  if (i >= 0) state.testere[i].navn = name;
+  else if (!state.testere.some(t => t.navn.toLowerCase() === name.toLowerCase())) state.testere.unshift({navn: name, smak: null, verdi: null, kommentar: ''});
+  $('#meBox').classList.add('hidden'); $('#meHint').classList.add('hidden');
+  const h = $('#hello'); h.classList.remove('hidden');
+  h.innerHTML = `<span>Hei, <b>${esc(name)}</b>! 👋</span><button type="button" id="notMe">Ikke deg?</button>`;
+  document.body.classList.add('started');
+  drawTesters(); drawNames();
+}
+function checkMe() {
+  const v = meIn.value.trim(); if (!v) return meIn.focus();
+  const k = EDParse.drinkKey(v), exact = names.find(n => EDParse.drinkKey(n) === k);
+  if (exact) return startAs(exact);
+  const sim = names.find(n => EDParse.similarDrink(n, v));
+  if (sim && !state.meNew) {
+    const h = $('#meHint'); h.className = 'hint similar';
+    h.innerHTML = `Er du <b>${esc(sim)}</b>?<div class="row"><button type="button" class="pill gold" data-meyes="${esc(sim)}">Ja, det er meg</button><button type="button" class="pill" data-meno>Nei, jeg er ny</button></div>`;
+    return;
+  }
+  startAs(v);
+}
+$('#meBtn').addEventListener('click', checkMe);
+meIn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); checkMe(); } });
+meIn.addEventListener('input', () => { state.meNew = false; $('#meHint').classList.add('hidden'); });
+$('#meHint').addEventListener('click', e => {
+  const y = e.target.closest('[data-meyes]'); if (y) return startAs(y.dataset.meyes);
+  if (e.target.closest('[data-meno]')) { state.meNew = true; startAs(meIn.value); }
+});
+$('#hello').addEventListener('click', e => {
+  if (!e.target.closest('#notMe')) return;
+  $('#hello').classList.add('hidden'); $('#meBox').classList.remove('hidden');
+  meIn.value = ''; meIn.focus();
+});
+{ const saved = store.get('ed-me'); if (saved) startAs(saved); else meIn.focus(); }
 
 // ----- nye badges etter lagring -----
 function celebrate(body, drikk) {

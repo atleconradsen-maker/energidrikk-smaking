@@ -125,6 +125,17 @@ nav a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-o
 .pname{background:none;border:0;padding:0;color:var(--ink);font:inherit;font-size:19px;font-weight:800;cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:rgba(226,201,143,.4);text-underline-offset:4px}
 .award .ic{font-size:30px;line-height:1}
 button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
+.bar-row .bm{justify-self:start}
+.prat{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:12px}
+.cm{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.cm .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.cm .who{background:none;border:0;padding:0;color:var(--ink);font:inherit;font-weight:800;cursor:pointer}
+.cm .what{font-size:13px;color:var(--muted)}
+.cm p{margin:0;font-size:16px}
+.like{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 14px;min-height:40px;font:inherit;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer}
+.like.on{border-color:var(--gold);color:var(--gold);background:rgba(226,201,143,.1)}
+.me{font-size:13px;color:var(--muted)}.me button{background:none;border:0;color:var(--gold);font:inherit;font-weight:700;cursor:pointer;padding:4px}
+.award .bm{margin-top:4px}
 .cta{display:block;text-align:center;padding:15px;border-radius:999px;background:var(--gold);color:var(--ink-on-gold);font-weight:800;text-decoration:none;margin-top:4px}
 
 /* all */
@@ -174,6 +185,7 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
   <div class="notice hidden" id="notice"></div>
 
   <section id="siste"></section>
+  <section id="prat"></section>
   <section id="kaaringer"></section>
   <section id="folk"></section>
   <section id="toppliste" class="split2"></section>
@@ -202,13 +214,13 @@ const MND = ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt
 const dato = t => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t || ''); return m ? `${+m[3]}. ${MND[+m[2] - 1]} ${m[1]}` : ''; };
 const CAN = `<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8l1 2v14l-1 2H8l-1-2V5z"/><path d="M7 7h10M7 17h10"/><path d="M13 9l-2.5 3.5h3L11 16"/></svg>`;
 
-let ratings = [], tests = [], sortKey = 'total', allSort = 'time', demo = false;
+let ratings = [], likes = new Map(), tests = [], sortKey = 'total', allSort = 'time';
 
 const byTotal = (a, b) => (b.total ?? -1) - (a.total ?? -1);
 const perL = v => v == null ? '' : kr(Math.round(v * 10) / 10) + '/l';
 const metaLine = t => [t.brand, t.ml ? t.ml + '\u00a0ml' : '', kr(t.price), perL(t.perL)].filter(Boolean).join(' · ');
 const byTime = (a, b) => (b.time || '').localeCompare(a.time || '');
-const bar = (label, v, gold) => `<div class="bar-row"><span>${label}</span><div class="bar${gold ? ' g' : ''}"><i style="width:${v ? v * 10 : 0}%"></i></div><b>${f1(v)}</b></div>`;
+const bar = (label, v, size) => `<div class="bar-row"><span>${label}</span>${window.EDBadges.meter(v, size || '')}<b>${f1(v)}</b></div>`;
 const img = (t, cls) => t.photo ? `<img class="${cls || ''}" src="${esc(t.photo)}" alt="${esc(t.drink)}" loading="lazy" onerror="this.remove()">` : '';
 
 function renderHero() {
@@ -222,7 +234,8 @@ function renderHero() {
         <h1 class="h h1">${esc(t.drink)}</h1><div class="meta">${esc(metaLine(t))}</div></div>
       <div class="score-big"><div class="n">${f1(t.total)}</div>
         <div style="padding-bottom:6px"><div class="lbl">Totalscore</div><div class="split">Smak <b>${f1(t.taste)}</b> + smak vs. pris <b>${f1(t.value)}</b></div></div></div>
-      <div class="bars">${bar('Smak', t.taste, true)}${bar('Smak vs. pris', t.value)}</div>
+      <div>${window.EDBadges.meter(t.total, 'lg')}</div>
+      <div class="bars">${bar('Smak', t.taste, 'sm')}${bar('Smak vs. pris', t.value, 'sm')}</div>
       ${t.scores.length ? `<div class="chips">${t.scores.slice(0, 8).map(s => `<button type="button" class="chip" data-person="${esc(s.name)}">${esc(s.name.split(' ')[0])} <b>${s.taste ?? '–'} / ${s.value ?? '–'}</b></button>`).join('')}</div>` : ''}
       ${t.scores.length > 8 ? `<div class="meta">+ ${t.scores.length - 8} til · ${nR(t)}</div>` : ''}
       ${t.notes.length ? `<p class="quote">${quote(t)}</p>` : ''}
@@ -243,8 +256,38 @@ function renderAwards() {
     ['Bunnskraperen', n > 1 ? best(tests, 'total', true) : null, 'total', t => 'Laveste totalscore så langt']
   ];
   $('#kaaringer').innerHTML = `<div class="sec-h"><h2 class="h">Kåringer</h2></div><div class="awards">${aw.map(([title, t, k, sub]) => t
-    ? `<div class="award"><div class="top"><div class="t">${title}</div><div class="s">${f1(t[k])}</div></div><div class="p">${esc(t.drink)}</div><div class="sub">${esc(sub(t))}</div></div>`
+    ? `<div class="award"><div class="top"><div class="t">${title}</div><div class="s">${f1(t[k])}</div></div><div class="p">${esc(t.drink)}</div>${window.EDBadges.meter(t[k], 'sm')}<div class="sub">${esc(sub(t))}</div></div>`
     : `<div class="award none"><div class="t">${title}</div><div class="p">Kåres når testene er inne</div></div>`).join('')}</div>`;
+}
+
+const me = () => { try { return localStorage.getItem('ed-me') || ''; } catch { return ''; } };
+function askName(then) {
+  const B = window.EDBadges;
+  B.sheet(`<h3>Hvem er du?</h3><p class="ksub">Skriv kallenavnet ditt. Det samme navnet brukes når du legger inn tester.</p>
+    <form id="nmF" style="display:flex;gap:8px;margin-top:12px"><input id="nmI" maxlength="40" required placeholder="Kallenavn" style="flex:1;font:inherit;font-size:16px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px"><button class="add" style="border:0;cursor:pointer">Lagre</button></form>`,
+    (ov, close) => { const i = ov.querySelector('#nmI'); i.value = me(); i.focus(); ov.querySelector('#nmF').addEventListener('submit', e => { e.preventDefault(); const v = i.value.trim().slice(0, 40); if (!v) return; try { localStorage.setItem('ed-me', v); } catch {} close(); renderPrat(); if (then) then(v); }); });
+}
+function renderPrat() {
+  const box = $('#prat'), B = window.EDBadges;
+  const notes = ratings.filter(r => r.note).sort((a, b) => String(b.time).localeCompare(String(a.time))).slice(0, 12);
+  if (!notes.length) { box.innerHTML = ''; return; }
+  const m = me().toLowerCase();
+  box.innerHTML = `<div class="sec-h"><h2 class="h">Siste kommentarer</h2><div class="me">${m ? `Du er <b>${esc(me())}</b> <button type="button" data-rename>Bytt</button>` : `<button type="button" data-rename>Hvem er du?</button>`}</div></div>
+    <div class="prat">${notes.map(r => { const id = EDParse.cid(r), set = likes.get(id) || new Set(), on = m && set.has(m); return `<div class="cm"><div class="top"><button type="button" class="who" data-person="${esc(r.name)}">${esc(r.name)}</button><span class="what">${esc(dato(r.time))}</span></div>
+      <div class="what">${esc(r.drink)} · ${f1(avg([r.taste, r.value]))}</div><p>«${esc(r.note)}»</p>
+      <button type="button" class="like${on ? ' on' : ''}" data-like="${id}" aria-pressed="${on ? 'true' : 'false'}">👍 ${set.size || ''}</button></div>`; }).join('')}</div>`;
+}
+async function toggleLike(id) {
+  const cfg = window.EDConfig || {}, who = me();
+  if (!who) return askName(() => toggleLike(id));
+  const k = who.toLowerCase(), set = likes.get(id) || new Set();
+  const had = set.has(k); had ? set.delete(k) : set.add(k); likes.set(id, set);
+  window.EDBadges.setLikes(likes); renderPrat(); renderFolk(); renderBoard();
+  try {
+    const r = await fetch(cfg.SCRIPT_URL, {method: 'POST', body: JSON.stringify({action: 'like', id, fra: who})});
+    const res = await r.json(); if (!res.ok) throw new Error(res.feil);
+    if (res.liked === had) { had ? set.add(k) : set.delete(k); window.EDBadges.setLikes(likes); renderPrat(); renderFolk(); renderBoard(); }
+  } catch { had ? set.add(k) : set.delete(k); window.EDBadges.setLikes(likes); renderPrat(); renderFolk(); renderBoard(); }
 }
 
 function renderFolk() {
@@ -268,7 +311,7 @@ function renderBoard() {
   const list = [...tests].sort((a, b) => sortKey === 'perL' ? (a.perL ?? 1e9) - (b.perL ?? 1e9) : (b[sortKey] ?? -1) - (a[sortKey] ?? -1));
   const colors = ['var(--gold)', '#d8dfec', '#d08a5a'];
   const rows = list.map((t, i) => `<div class="br"><span class="rk" style="${i < 3 ? 'color:' + colors[i] : ''}">${i + 1}</span>
-    <span class="nm"><b>${esc(t.drink)}</b><small>${esc([t.brand, nR(t)].filter(Boolean).join(' · '))}</small>
+    <span class="nm"><b>${esc(t.drink)}</b><small>${esc([t.brand, nR(t)].filter(Boolean).join(' · '))}</small><small>${window.EDBadges.meter(t.total, 'sm')}</small>
       <small class="mob">Smak ${f1(t.taste)} · verdi ${f1(t.value)}${t.perL != null ? ' · ' + esc(perL(t.perL)) : ''}</small></span>
     <span class="c${sortKey === 'taste' ? ' sel' : ''}">${f1(t.taste)}</span><span class="c${sortKey === 'value' ? ' sel' : ''}">${f1(t.value)}</span>
     <span class="c${sortKey === 'perL' ? ' sel' : ''}">${t.perL != null ? esc(kr(Math.round(t.perL))) : '–'}</span><span class="tot">${f1(t.total)}</span></div>`).join('');
@@ -290,7 +333,8 @@ function renderBoard() {
 function card(t) {
   return `<article class="card"><div class="im">${CAN}${img(t)}</div><div class="bd">
     <div class="hd"><div><h3>${esc(t.drink)}</h3><div class="meta" style="font-size:13px">${esc(metaLine(t))}</div><div class="meta" style="font-size:13px">${dato(t.time) ? 'Sist testet ' + esc(dato(t.time)) + ' · ' : ''}${nR(t)}</div></div><div class="tt">${f1(t.total)}</div></div>
-    <div class="bars">${bar('Smak', t.taste, true)}${bar('Smak vs. pris', t.value)}</div>
+    <div>${window.EDBadges.meter(t.total, 'sm')}</div>
+    <div class="bars">${bar('Smak', t.taste, 'sm')}${bar('Smak vs. pris', t.value, 'sm')}</div>
     ${t.notes.length ? `<p class="quote" style="font-size:14px">${quote(t)}</p>` : ''}</div></article>`;
 }
 function renderAll() {
@@ -302,12 +346,14 @@ function renderAll() {
   $('#alle').innerHTML = html;
 }
 
-function render() { renderHero(); renderAwards(); renderFolk(); renderBoard(); renderAll(); }
+function render() { renderHero(); renderPrat(); renderAwards(); renderFolk(); renderBoard(); renderAll(); }
 
 document.addEventListener('click', e => {
   const p = e.target.closest('[data-sort]'); if (p) { sortKey = p.dataset.sort; renderBoard(); return; }
   const a = e.target.closest('[data-all]'); if (a) { allSort = a.dataset.all; renderAll(); return; }
   const pp = e.target.closest('[data-person]'); if (pp) { window.EDBadges.openProfile(pp.dataset.person, ratings); return; }
+  const lk = e.target.closest('[data-like]'); if (lk) { toggleLike(lk.dataset.like); return; }
+  if (e.target.closest('[data-rename]')) { askName(); return; }
   if (e.target.closest('[data-info]')) window.EDBadges.openInfo(ratings);
 });
 
@@ -316,8 +362,7 @@ const navLinks = [...document.querySelectorAll('#nav a')];
 const spy = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) navLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + en.target.id)); }), {rootMargin: '-40% 0px -55% 0px'});
 ['siste', 'toppliste', 'alle'].forEach(id => spy.observe(document.getElementById(id)));
 
-async function getJSON(url) { const r = await fetch(url + '?v=' + Date.now(), {cache: 'no-store'}); if (!r.ok) throw new Error(r.status); return r.json(); }
-function gviz() {
+function gviz(sheet) {
   const id = (window.EDConfig || {}).SHEET_ID;
   if (!id) return Promise.resolve(null);
   return new Promise((resolve, reject) => {
@@ -326,28 +371,32 @@ function gviz() {
     const to = setTimeout(() => { done(); reject(new Error('timeout')); }, 12000);
     window[cb] = res => { done(); res && res.status !== 'error' && res.table ? resolve(res.table) : reject(new Error('gviz')); };
     sc.onerror = () => { done(); reject(new Error('load')); };
-    sc.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(id)}/gviz/tq?headers=1&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
+    sc.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(id)}/gviz/tq?headers=1${sheet ? '&sheet=' + encodeURIComponent(sheet) : ''}&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
     document.head.append(sc);
   });
 }
-async function load(useDemo) {
+async function load() {
   const nb = $('#notice');
   try {
-    ratings = [];
-    if (!useDemo) { const table = await gviz(); if (table) ratings = EDParse.rowsToRatings(EDParse.gvizToRows(table)); }
-    demo = useDemo || !ratings.length;
-    if (demo) ratings = EDParse.jsonToRatings(await getJSON('data/eksempel.json'));
+    const table = await gviz();
+    ratings = table ? EDParse.rowsToRatings(EDParse.gvizToRows(table)) : [];
+    try {
+      const lt = await gviz('Likes'); const m = new Map();
+      EDParse.gvizToRows(lt).slice(1).forEach(r => { const id = String(r[1] || '').trim(), fra = String(r[2] || '').trim().toLowerCase(); if (id && fra) { if (!m.has(id)) m.set(id, new Set()); m.get(id).add(fra); } });
+      likes = m;
+    } catch { likes = new Map(); }
+    window.EDBadges.setLikes(likes);
     tests = EDParse.toDrinks(ratings);
-    if (!demo) setTimeout(() => window.EDBadges.monthReveal(ratings), 600);
-    nb.classList.toggle('hidden', !demo);
-    nb.innerHTML = demo ? `<span><b>Eksempeldata.</b> Ingen ekte tester er lagt inn ennå, så siden viser et eksempel.</span><a class="add" href="legg-inn.html">+ Legg inn første test</a>` : '';
-    $('#updated').textContent = demo ? '' : `${tests.length} drikker · ${ratings.length} vurderinger`;
+    nb.classList.toggle('hidden', !!ratings.length);
+    nb.innerHTML = ratings.length ? '' : `<span><b>Ingen tester ennå.</b> Bli den første, og ta badgen «Første slurk».</span><a class="add" href="legg-inn.html">+ Legg inn første test</a>`;
+    $('#updated').textContent = ratings.length ? `${tests.length} drikker · ${ratings.length} vurderinger` : '';
+    if (ratings.length) setTimeout(() => window.EDBadges.monthReveal(ratings), 600);
   } catch {
     tests = []; ratings = []; nb.classList.remove('hidden'); nb.innerHTML = '<span>Kunne ikke hente testene. Prøv å laste siden på nytt.</span>';
   }
   render();
 }
-render(); load(location.hash === '#eksempel');
+render(); load();
 }
 </script>
 </body>

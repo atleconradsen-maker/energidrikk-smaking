@@ -12,6 +12,8 @@
   const parseT = t => { const m = /^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}):(\d{2}))?/.exec(t || ''); return m ? {y: +m[1], mo: +m[2], d: +m[3], h: m[4] != null ? +m[4] : null} : null; };
   const isoWeekIndex = p => { const t = new Date(Date.UTC(p.y, p.mo - 1, p.d)); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); return Math.floor(t / 6048e5); };
   const weekday = p => new Date(Date.UTC(p.y, p.mo - 1, p.d)).getUTCDay();
+  let LIKES = new Map(); // kommentar-ID -> Set(navn i små bokstaver)
+  const likesOf = r => r.note ? [...(LIKES.get(root.EDParse.cid(r)) || [])].filter(f => f !== nk(r.name)).length : 0;
   const initials = n => String(n).split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase() || '?';
 
   // ---------- badges ----------
@@ -45,6 +47,8 @@
     ['Folket', [
       ['fotograf', '📸', 'Fotografen', 'Legg inn 5 tester med bilde', p => p.photos, 5],
       ['ordsmed', '💬', 'Ordsmed', 'Skriv 10 kommentarer', p => p.notes, 10],
+      ['likt', '👍', 'Likt', 'Få din første like på en kommentar', p => p.likes, 1],
+      ['folkefavoritt', '⭐', 'Folkefavoritt', 'Få 25 likes til sammen', p => p.likes, 25],
       ['panel', '👥', 'Smakspanelet', 'Legg inn en test sammen med minst 3 andre', p => p.panel, 1]]]
   ];
   const ALL = BADGES.flatMap(([, l]) => l);
@@ -105,6 +109,7 @@
         pricey: e.filter(r => r.price != null && r.price > 40).length,
         big: e.filter(r => r.ml != null && r.ml >= 750).length,
         ten: e.filter(r => r.taste === 10).length, low: e.filter(r => r.taste != null && r.taste <= 3).length,
+        likes: e.reduce((s, r) => s + likesOf(r), 0),
         rebel, judge, photos: e.filter(r => r.photo).length, notes: e.filter(r => r.note).length,
         panel: e.filter(r => (groupSize.get(r.time + '|' + K(r.drink)) || 0) >= 4).length,
         avg: avg(given), points: e.length * 3 + e.filter(r => r.note).length,
@@ -142,6 +147,7 @@
     const add = (icon, title, people, sub) => { if (people.length) out.push({icon, title, people, sub}); };
     add('🚜', 'Boksmaskinen', leaders(ps, p => p.n), p => `${p.n} tester`);
     add('🧭', 'Oppdageren', leaders(ps, p => p.pioneer), p => `Først ute på ${p.pioneer} ${p.pioneer === 1 ? 'drikk' : 'drikker'}`);
+    add('👍', 'Folkets stemme', leaders(ps, p => p.likes), p => `${p.likes} likes på kommentarene sine`);
     const rated = ps.filter(p => p.n >= 3);
     if (rated.length > 1) {
       add('😇', 'Snillest', leaders(rated, p => p.avg, -Infinity), p => `Gir ${f1(p.avg)} i snitt`);
@@ -250,6 +256,7 @@
         ['🤠', 'Månedens koffeinkonge / -dronning', 'Flest poeng forrige måned. En test gir 3 poeng og en kommentar 1 poeng. Kåres den 1. hver måned'],
         ['🏆', 'Årets koffeinkonge / -dronning', 'Flest poeng gjennom hele året, med samme poeng. Kåres 1. januar'],
         ['🚜', 'Boksmaskinen', 'Flest tester'], ['🧭', 'Oppdageren', 'Først ute på flest nye drikker'],
+        ['👍', 'Folkets stemme', 'Flest likes på kommentarene sine'],
         ['🏷️', 'Merkeambassadør', 'Flest tester av et merke, for de tre mest testede merkene'],
         ['😇', 'Snillest', 'Gir høyest score i snitt (minst 3 tester)'], ['🧐', 'Strengest', 'Gir lavest score i snitt (minst 3 tester)']
       ].map(([icon, name, how]) => badgeHtml({icon, name, how, done: true})).join('')}</div>
@@ -268,5 +275,20 @@
     confetti();
   }
 
-  root.EDBadges = { BADGES, badgesOf, peopleStats, titles, pointsIn, prevMonth, monthName, yearWinners, openProfile, openInfo, monthReveal, confetti, sheet, badgeHtml, avatarHtml, nk };
+  // ---------- batterimåler (1–10) ----------
+  const BAT_E = '<svg viewBox="0 0 14 24" aria-hidden="true"><rect x="4.5" y=".5" width="5" height="2.6" rx="1" fill="#2a3f73"/><rect x="1.2" y="2.8" width="11.6" height="20.4" rx="2.6" fill="#0b1834" stroke="#2a3f73" stroke-width="1.4"/></svg>';
+  const BAT_F = '<svg class="f" viewBox="0 0 14 24" aria-hidden="true"><rect x="4.5" y=".5" width="5" height="2.6" rx="1" fill="#f1dcaa"/><rect x="1.2" y="2.8" width="11.6" height="20.4" rx="2.6" fill="#0b1834" stroke="#f1dcaa" stroke-width="1.4"/><rect x="3.2" y="4.8" width="7.6" height="16.4" rx="1.4" fill="#e2c98f"/><path d="M7.8 7.6l-2.6 5.2h2.2l-1 4.6 3.2-6h-2.2z" fill="#1a1408" opacity=".75"/></svg>';
+  const bmCss = document.createElement('style');
+  bmCss.textContent = `.bm{display:inline-flex;align-items:center;gap:3px;vertical-align:middle}.bm .bc{position:relative;display:inline-block;width:12px;height:21px}.bm.sm .bc{width:9px;height:16px}.bm.lg .bc{width:19px;height:33px;gap:4px}.bm .bc svg{position:absolute;inset:0;width:100%;height:100%}.bm .num{margin-left:6px;font-family:Anton,sans-serif;color:var(--gold)}@keyframes bmup{from{clip-path:inset(100% 0 0 0)}}.bm .bc .f{animation:bmup .6s ease-out both;animation-delay:calc(var(--k) * 60ms)}@media(prefers-reduced-motion:reduce){.bm .bc .f{animation:none}}.bm.still .bc .f{animation:none}`;
+  document.head.append(bmCss);
+  function meter(v, size = '', showNum = false) {
+    let h = '';
+    for (let i = 0; i < 10; i++) {
+      const fr = v == null ? 0 : Math.max(0, Math.min(1, v - i));
+      h += `<span class="bc" style="--k:${i}">${BAT_E}${fr > 0 ? BAT_F.replace('class="f"', `class="f" style="clip-path:inset(${Math.round((1 - fr) * 100)}% 0 0 0)"`) : ''}</span>`;
+    }
+    return `<span class="bm ${size}" role="img" aria-label="${v == null ? 'Ingen score' : f1(v) + ' av 10 batterier'}">${h}${showNum ? `<span class="num">${f1(v)}</span>` : ''}</span>`;
+  }
+
+  root.EDBadges = { meter, setLikes: m => { LIKES = m || new Map(); }, likesOf, BADGES, badgesOf, peopleStats, titles, pointsIn, prevMonth, monthName, yearWinners, openProfile, openInfo, monthReveal, confetti, sheet, badgeHtml, avatarHtml, nk };
 })(typeof self !== 'undefined' ? self : this);

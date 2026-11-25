@@ -106,6 +106,13 @@
     });
   }
 
-  const api = { drinkKey, similarDrink, imageUrl, gvizToRows, rowsToRatings, jsonToRatings, toDrinks };
+  // Stabil ID for en kommentar (brukes til likes)
+  function cid(r) {
+    const s = String(r.time) + '|' + drinkKey(r.drink) + '|' + String(r.name).trim().toLowerCase();
+    let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+    return 'k' + h.toString(36);
+  }
+
+  const api = { cid, drinkKey, similarDrink, imageUrl, gvizToRows, rowsToRatings, jsonToRatings, toDrinks };
   root.EDParse = api;
 })(typeof self !== 'undefined' ? self : this);
