@@ -115,6 +115,8 @@ nav a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-o
 .judge>div:nth-child(2){flex:1}
 .tag{flex:none;font-size:11px;font-weight:800;letter-spacing:.7px;padding:4px 9px;border-radius:99px;margin-left:auto;white-space:nowrap}
 .tag.kind{background:#1f3322;color:var(--good)}.tag.hard{background:#3d1f1c;color:var(--bad)}
+.hdr-r{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.add{display:inline-flex;align-items:center;gap:6px;padding:11px 18px;border-radius:999px;background:var(--gold);color:var(--ink-on-gold);font-weight:800;font-size:14px;text-decoration:none;white-space:nowrap}
 .cta{display:block;text-align:center;padding:15px;border-radius:999px;background:var(--gold);color:var(--ink-on-gold);font-weight:800;text-decoration:none;margin-top:4px}
 
 /* all */
@@ -136,7 +138,7 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
 @media(max-width:600px){
   header{position:static;margin:0}
   .brand img{width:48px;height:48px}.brand .h{font-size:24px}.brand small{display:none}
-  nav{width:100%}nav a{flex:1;text-align:center;padding:11px 6px}
+  .hdr-r{width:100%}nav{width:100%}nav a{flex:1;text-align:center;padding:11px 6px}.add{width:100%;justify-content:center}
   .shot{min-height:260px}
   .bar-row{grid-template-columns:96px minmax(0,1fr) 30px}
   .wrap{gap:36px}
@@ -151,11 +153,14 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
       <img src="logo.jpg" alt="Energidrikk Smaking-logo">
       <div><div class="h">Energidrikk <span>Smaking</span></div><small>Smak og smak vs. pris får hver sin score fra 1 til 10</small></div>
     </a>
+    <div class="hdr-r">
     <nav id="nav">
       <a href="#siste" class="on">Siste test</a>
       <a href="#toppliste">Toppliste</a>
       <a href="#alle">Alle drikker</a>
     </nav>
+    <a class="add" href="legg-inn.html">+ Legg inn test</a>
+    </div>
   </header>
 
   <div class="notice hidden" id="notice"></div>
@@ -166,50 +171,43 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
   <section id="alle"></section>
 
   <footer>
-    <span>Totalscoren er snittet av smak og smak vs. pris. Hver testperson gir 1–10 på begge.</span>
+    <span>Totalscoren er snittet av smak og smak vs. pris. Alle kan legge inn en test, og hver vurdering teller likt.</span>
     <span id="updated"></span>
   </footer>
 </div>
 
+<script src="config.js"></script>
+<script src="parse.js"></script>
 <script>
 {
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const TESTERS = ['Itrat Zishan', 'Tobias Frost', 'Atle Conradsen', 'Truls Blingø'];
+const quote = t => t.notes.length ? `«${esc(t.notes[0].text)}»${t.notes[0].name ? ' – ' + esc(t.notes[0].name.split(' ')[0]) : ''}` : '';
+const nR = t => t.scores.length + (t.scores.length === 1 ? ' vurdering' : ' vurderinger');
 const avg = a => { a = a.filter(x => x != null); return a.length ? a.reduce((s, x) => s + x, 0) / a.length : null; };
 const f1 = v => v == null ? '–' : (Math.round(v * 10) / 10).toFixed(1).replace('.', ',');
 const kr = v => v == null ? '' : v.toLocaleString('nb-NO', {maximumFractionDigits: 2}) + '\u00a0kr';
-const sc = v => { const n = Math.round(Number(v)); return n >= 1 && n <= 10 ? n : null; };
 const wk = w => { const m = /^(\d{4})-W(\d{1,2})$/.exec(w || ''); return m ? `Uke ${+m[2]} · ${m[1]}` : 'Ukjent uke'; };
 const wkShort = w => { const m = /^(\d{4})-W(\d{1,2})$/.exec(w || ''); return m ? `uke ${+m[2]}` : ''; };
-const safePhoto = p => typeof p === 'string' && /^[\w\-./]+\.(jpe?g|png|webp|gif)$/i.test(p) && !p.includes('..') ? p : '';
 const CAN = `<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8l1 2v14l-1 2H8l-1-2V5z"/><path d="M7 7h10M7 17h10"/><path d="M13 9l-2.5 3.5h3L11 16"/></svg>`;
 
 let tests = [], sortKey = 'total', weekFilter = 'all', demo = false;
 
-function norm(d, i) {
-  const scores = (Array.isArray(d.scores) ? d.scores : []).map(s => ({name: String(s?.name || 'Anonym').slice(0, 40), taste: sc(s?.taste), value: sc(s?.value)})).filter(s => s.taste != null || s.value != null);
-  const taste = avg(scores.map(s => s.taste)), value = avg(scores.map(s => s.value));
-  const price = Number.isFinite(+d.price) && d.price !== null && d.price !== '' ? +d.price : null;
-  const ml = Number.isFinite(+d.ml) && +d.ml > 0 ? +d.ml : null;
-  return {id: String(d.id || i), drink: String(d.drink || 'Uten navn').slice(0, 80), brand: String(d.brand || '').slice(0, 60),
-    week: String(d.week || ''), price, ml, perL: price != null && ml ? price / ml * 1000 : null, photo: safePhoto(d.photo),
-    notes: String(d.notes || '').slice(0, 400), scores, taste, value,
-    total: taste != null && value != null ? (taste + value) / 2 : (taste ?? value)};
-}
 const weeks = () => [...new Set(tests.map(t => t.week).filter(Boolean))].sort().reverse();
 const byTotal = (a, b) => (b.total ?? -1) - (a.total ?? -1);
 const perL = v => v == null ? '' : kr(Math.round(v * 10) / 10) + '/l';
 const metaLine = t => [t.brand, t.ml ? t.ml + '\u00a0ml' : '', kr(t.price), perL(t.perL)].filter(Boolean).join(' · ');
+const byTime = (a, b) => (b.time || '').localeCompare(a.time || '');
 const bar = (label, v, gold) => `<div class="bar-row"><span>${label}</span><div class="bar${gold ? ' g' : ''}"><i style="width:${v ? v * 10 : 0}%"></i></div><b>${f1(v)}</b></div>`;
 const img = (t, cls) => t.photo ? `<img class="${cls || ''}" src="${esc(t.photo)}" alt="${esc(t.drink)}" loading="lazy" onerror="this.remove()">` : '';
 
 function renderHero() {
   const box = $('#siste');
   if (!tests.length) { box.innerHTML = `<div class="empty"><b>Ingen tester publisert ennå</b>Første test dukker opp her så snart den er lagt inn.</div>`; return; }
-  const w = weeks()[0];
-  const list = tests.filter(t => t.week === w).sort(byTotal);
-  const t = list[0];
+  const t = [...tests].sort(byTime)[0];
+  const w = t.week;
+  const list = [t, ...tests.filter(x => x !== t && x.week === w).sort(byTotal)];
   box.innerHTML = `<div class="hero">
     <div class="shot">${t.photo ? img(t, 'photo') : ''}<div class="ph">${CAN}Bilde av boksen</div><div class="badge">${esc(wkShort(t.week))} · ukens drikk</div></div>
     <div class="hero-info">
@@ -218,8 +216,9 @@ function renderHero() {
       <div class="score-big"><div class="n">${f1(t.total)}</div>
         <div style="padding-bottom:6px"><div class="lbl">Totalscore</div><div class="split">Smak <b>${f1(t.taste)}</b> + smak vs. pris <b>${f1(t.value)}</b></div></div></div>
       <div class="bars">${bar('Smak', t.taste, true)}${bar('Smak vs. pris', t.value)}</div>
-      ${t.scores.length ? `<div class="chips">${t.scores.map(s => `<span class="chip">${esc(s.name.split(' ')[0])} <b>${s.taste ?? '–'} / ${s.value ?? '–'}</b></span>`).join('')}</div>` : ''}
-      ${t.notes ? `<p class="quote">«${esc(t.notes)}»</p>` : ''}
+      ${t.scores.length ? `<div class="chips">${t.scores.slice(0, 8).map(s => `<span class="chip">${esc(s.name.split(' ')[0])} <b>${s.taste ?? '–'} / ${s.value ?? '–'}</b></span>`).join('')}</div>` : ''}
+      ${t.scores.length > 8 ? `<div class="meta">+ ${t.scores.length - 8} til · ${nR(t)}</div>` : ''}
+      ${t.notes.length ? `<p class="quote">${quote(t)}</p>` : ''}
     </div></div>
     ${list.length > 1 ? `<div class="also" style="margin-top:22px"><div class="lbl">Også testet ${esc(wkShort(w))}</div><div class="row">${list.slice(1).map(x => `<span class="chip">${esc(x.drink)} <b>${f1(x.total)}</b></span>`).join('')}</div></div>` : ''}`;
 }
@@ -231,7 +230,7 @@ function best(list, key, low) {
 function renderAwards() {
   const n = tests.length;
   const aw = [
-    ['Smakskongen', best(tests, 'taste'), 'taste', t => `Best smak av ${n} drikker`],
+    ['Smakskongen', best(tests, 'taste'), 'taste', t => `Best smak av ${n} drikker · ${nR(t)}`],
     ['Mest for pengene', best(tests, 'value'), 'value', t => t.perL != null ? `${kr(Math.round(t.perL * 10) / 10)} per liter` : 'Høyest smak vs. pris'],
     ['Totalvinner', best(tests, 'total'), 'total', t => [t.brand, wk(t.week)].filter(Boolean).join(' · ')],
     ['Bunnskraperen', n > 1 ? best(tests, 'total', true) : null, 'total', t => 'Laveste totalscore så langt']
@@ -250,12 +249,14 @@ function renderBoard() {
       <small class="mob">Smak ${f1(t.taste)} · verdi ${f1(t.value)}${t.perL != null ? ' · ' + esc(perL(t.perL)) : ''}</small></span>
     <span class="c${sortKey === 'taste' ? ' sel' : ''}">${f1(t.taste)}</span><span class="c${sortKey === 'value' ? ' sel' : ''}">${f1(t.value)}</span>
     <span class="c${sortKey === 'perL' ? ' sel' : ''}">${t.perL != null ? esc(kr(Math.round(t.perL))) : '–'}</span><span class="tot">${f1(t.total)}</span></div>`).join('');
-  const judges = TESTERS.map(name => ({name, given: [], favs: []}));
+  const judges = [];
   for (const t of tests) for (const s of t.scores) {
-    let j = judges.find(x => x.name === s.name); if (!j) judges.push(j = {name: s.name, given: [], favs: []});
+    let j = judges.find(x => x.name.toLowerCase() === s.name.toLowerCase()); if (!j) judges.push(j = {name: s.name, given: [], favs: []});
     j.given.push(s.taste, s.value); const mine = avg([s.taste, s.value]); if (mine != null) j.favs.push([mine, t.drink]);
   }
   judges.forEach(j => { j.avg = avg(j.given); j.fav = j.favs.sort((a, b) => b[0] - a[0])[0]?.[1]; j.n = j.favs.length; });
+  if (!judges.length) TESTERS.forEach(name => judges.push({name, given: [], favs: [], n: 0, avg: null}));
+  judges.sort((a, b) => b.n - a.n); judges.splice(8);
   const rated = judges.filter(j => j.avg != null);
   const kind = rated.length > 1 ? rated.reduce((a, b) => b.avg > a.avg ? b : a) : null;
   const hard = rated.length > 1 ? rated.reduce((a, b) => b.avg < a.avg ? b : a) : null;
@@ -264,18 +265,19 @@ function renderBoard() {
       ${tests.length ? `<div class="board"><div class="br head"><span>#</span><span>Drikk</span><span class="c">Smak</span><span class="c">Verdi</span><span class="c">Kr/l</span><span class="tot">Total</span></div>${rows}</div>`
         : `<div class="empty"><b>Topplista er tom</b>Den fylles opp etter hvert som drikkene testes.</div>`}
     </div>
-    <div class="side"><h2 class="h" style="font-size:28px;margin-bottom:4px">Dommerpanelet</h2>
+    <div class="side"><h2 class="h" style="font-size:28px;margin-bottom:4px">Mest aktive testere</h2>
       ${judges.map(j => `<div class="judge"><div class="av">${esc(j.name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase())}</div>
         <div><div class="jn">${esc(j.name)}</div><div class="js">${j.n ? `Snitt gitt <b>${f1(j.avg)}</b> · ${j.n} tester${j.fav ? ' · favoritt: ' + esc(j.fav) : ''}` : 'Ingen tester ennå'}</div></div>
         ${j === kind ? '<span class="tag kind">SNILLEST</span>' : j === hard ? '<span class="tag hard">STRENGEST</span>' : ''}</div>`).join('')}
+      <a class="cta" href="legg-inn.html">+ Legg inn ny test</a>
     </div>`;
 }
 
 function card(t) {
   return `<article class="card"><div class="im">${CAN}${img(t)}</div><div class="bd">
-    <div class="hd"><div><h3>${esc(t.drink)}</h3><div class="meta" style="font-size:13px">${esc(metaLine(t))}</div><div class="meta" style="font-size:13px">${esc(wk(t.week))}</div></div><div class="tt">${f1(t.total)}</div></div>
+    <div class="hd"><div><h3>${esc(t.drink)}</h3><div class="meta" style="font-size:13px">${esc(metaLine(t))}</div><div class="meta" style="font-size:13px">${esc(wk(t.week))} · ${nR(t)}</div></div><div class="tt">${f1(t.total)}</div></div>
     <div class="bars">${bar('Smak', t.taste, true)}${bar('Smak vs. pris', t.value)}</div>
-    ${t.notes ? `<p class="quote" style="font-size:14px">«${esc(t.notes)}»</p>` : ''}</div></article>`;
+    ${t.notes.length ? `<p class="quote" style="font-size:14px">${quote(t)}</p>` : ''}</div></article>`;
 }
 function renderAll() {
   const ws = weeks();
@@ -301,16 +303,30 @@ const spy = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersect
 ['siste', 'toppliste', 'alle'].forEach(id => spy.observe(document.getElementById(id)));
 
 async function getJSON(url) { const r = await fetch(url + '?v=' + Date.now(), {cache: 'no-store'}); if (!r.ok) throw new Error(r.status); return r.json(); }
+function gviz() {
+  const id = (window.EDConfig || {}).SHEET_ID;
+  if (!id) return Promise.resolve(null);
+  return new Promise((resolve, reject) => {
+    const cb = '__ed' + Date.now() + Math.floor(Math.random() * 1e6), sc = document.createElement('script');
+    const done = () => { delete window[cb]; sc.remove(); clearTimeout(to); };
+    const to = setTimeout(() => { done(); reject(new Error('timeout')); }, 12000);
+    window[cb] = res => { done(); res && res.status !== 'error' && res.table ? resolve(res.table) : reject(new Error('gviz')); };
+    sc.onerror = () => { done(); reject(new Error('load')); };
+    sc.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(id)}/gviz/tq?headers=1&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
+    document.head.append(sc);
+  });
+}
 async function load(useDemo) {
   const nb = $('#notice');
   try {
-    let data = useDemo ? [] : await getJSON('data/tests.json');
-    demo = useDemo || !Array.isArray(data) || !data.length;
-    if (demo) data = await getJSON('data/eksempel.json');
-    tests = data.map(norm);
+    let ratings = [];
+    if (!useDemo) { const table = await gviz(); if (table) ratings = EDParse.rowsToRatings(EDParse.gvizToRows(table)); }
+    demo = useDemo || !ratings.length;
+    if (demo) ratings = EDParse.jsonToRatings(await getJSON('data/eksempel.json'));
+    tests = EDParse.toDrinks(ratings);
     nb.classList.toggle('hidden', !demo);
-    nb.innerHTML = demo ? `<span><b>Eksempeldata.</b> Ingen ekte tester er publisert ennå, så siden viser et eksempel.</span>` : '';
-    $('#updated').textContent = demo ? '' : `${tests.length} drikker testet`;
+    nb.innerHTML = demo ? `<span><b>Eksempeldata.</b> Ingen ekte tester er lagt inn ennå, så siden viser et eksempel.</span><a class="add" href="legg-inn.html">+ Legg inn første test</a>` : '';
+    $('#updated').textContent = demo ? '' : `${tests.length} drikker · ${ratings.length} vurderinger`;
   } catch {
     tests = []; nb.classList.remove('hidden'); nb.innerHTML = '<span>Kunne ikke hente testene. Prøv å laste siden på nytt.</span>';
   }

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Legg inn test – Energidrikk Smaking</title>
+<link rel="icon" href="logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#07122b;--panel:#0e1c3d;--panel2:#142650;--line:#223766;--line2:#1a2c55;--ink:#f4f6fb;--muted:#9fb0d0;--gold:#e2c98f;--gold2:#f1dcaa;--ice:#4aa3ff;--on-gold:#1a1408;--good:#8fe08a;--bad:#ff8a7a}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:radial-gradient(900px 420px at 50% -200px,#17336f 0%,transparent 70%),var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:560px;margin:0 auto;padding:18px 16px 120px;display:flex;flex-direction:column;gap:22px}
+header{display:flex;align-items:center;gap:12px}
+.back{width:44px;height:44px;flex:none;border-radius:50%;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink);text-decoration:none}
+header img{width:44px;height:44px;border-radius:50%;box-shadow:0 0 0 2px var(--gold)}
+h1{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:28px;margin:0;text-transform:uppercase;letter-spacing:.3px;line-height:1}
+.lbl{font-size:13px;font-weight:800;letter-spacing:1.2px;color:var(--gold);text-transform:uppercase;margin-bottom:8px;display:block}
+input,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;width:100%}
+input::placeholder,textarea::placeholder{color:#6f84b3}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.two{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.two label{font-size:12px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+.hint{font-size:14px;border-radius:12px;padding:10px 12px;margin-top:8px}
+.hint.known{background:#14301f;color:var(--good)}
+.hint.new{background:var(--panel);color:var(--muted)}
+.hint.similar{background:#3a2d12;color:var(--gold2)}
+.hint .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.sugg{display:flex;flex-direction:column;margin-top:6px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.sugg button{background:none;border:0;border-top:1px solid var(--line2);text-align:left;padding:12px 14px;display:flex;justify-content:space-between;gap:10px;min-height:44px}
+.sugg button:first-child{border-top:0}
+.sugg small{color:var(--muted)}
+.pill{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:10px 14px;font-weight:700;font-size:14px;min-height:44px;color:var(--muted)}
+.pill.on{border-color:var(--gold);color:var(--gold);background:rgba(226,201,143,.1)}
+.pill.gold{background:var(--gold);border-color:var(--gold);color:var(--on-gold)}
+.photo{position:relative;border:1.5px dashed #33497d;background:#0b1834;border-radius:18px;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-weight:700;cursor:pointer;overflow:hidden}
+.photo input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo .x{position:absolute;right:10px;top:10px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(7,18,43,.85);color:#fff;font-size:22px;z-index:2}
+.names{display:flex;gap:8px;flex-wrap:wrap}
+.addrow{display:flex;gap:8px;margin-bottom:10px}
+.addrow input{flex:1}
+.tester{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:14px 16px;margin-top:12px}
+.th{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.th b{font-size:18px}
+.tot{font-family:Anton,sans-serif;font-size:30px;color:var(--gold);line-height:1}
+.step{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line2);margin-top:8px}
+.step span{font-weight:600}
+.ctl{display:flex;align-items:center;gap:6px}
+.ctl button{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--bg);font-size:22px;font-weight:700}
+.ctl output{width:38px;text-align:center;font-family:Anton,sans-serif;font-size:24px;color:var(--gold)}
+.ctl output.empty{color:#4e6394}
+.rm{background:none;border:0;color:var(--bad);font-weight:700;padding:8px 0;min-height:40px}
+.empty-t{color:var(--muted);text-align:center}
+.empty-t b{display:block;color:var(--ink);margin-bottom:4px}
+.save{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 35%);z-index:10}
+.save button{display:block;width:100%;max-width:528px;margin:0 auto;border:0;border-radius:999px;padding:17px;background:var(--gold);color:var(--on-gold);font-weight:800;font-size:17px;box-shadow:0 6px 0 #9c844f}
+.save button:disabled{opacity:.6}
+.msg{border-radius:16px;padding:14px 16px;font-size:15px}
+.msg.err{background:#3d1f1c;color:var(--bad)}
+.msg.ok{background:#14301f;color:var(--good)}
+.msg a{color:var(--gold)}
+.hidden{display:none!important}
+@media(max-width:420px){.two{grid-template-columns:repeat(2,minmax(0,1fr))}.two label:first-child{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<form class="wrap" id="f" autocomplete="off" novalidate>
+  <header>
+    <a class="back" href="./" aria-label="Tilbake til forsiden"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <img src="logo.jpg" alt="">
+    <h1>Legg inn test</h1>
+  </header>
+
+  <div class="msg err hidden" id="setup">Innleggingen er ikke koblet til regnearket ennå. Prøv igjen litt senere.</div>
+
+  <div>
+    <label class="lbl" for="drikk">Hvilken drikk?</label>
+    <input id="drikk" maxlength="80" placeholder="Skriv navnet, f.eks. Monster Ultra White" enterkeyhint="next">
+    <div class="sugg hidden" id="sugg"></div>
+    <div class="hint hidden" id="hint"></div>
+  </div>
+
+  <div class="two">
+    <label>Merke<input id="merke" maxlength="60" placeholder="Monster"></label>
+    <label>Pris (kr)<input id="pris" type="number" inputmode="decimal" step="0.1" min="0" placeholder="29,90"></label>
+    <label>Størrelse (ml)<input id="ml" type="number" inputmode="numeric" min="0" placeholder="500"></label>
+  </div>
+
+  <div>
+    <span class="lbl">Bilde av boksen</span>
+    <label class="photo" id="photo"><input type="file" accept="image/*" id="bilde" aria-label="Ta eller velg bilde av boksen">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      Ta eller velg bilde
+    </label>
+  </div>
+
+  <div>
+    <span class="lbl">Hvem tester?</span>
+    <div class="addrow"><input id="nyNavn" maxlength="40" placeholder="Navnet ditt" enterkeyhint="done"><button type="button" class="pill gold" id="addBtn">Legg til</button></div>
+    <div class="names" id="names"></div>
+    <div id="testers"></div>
+  </div>
+
+  <div class="msg hidden" id="msg"></div>
+</form>
+<div class="save"><button type="submit" form="f" id="saveBtn">Lagre test</button></div>
+
+<script src="config.js"></script>
+<script src="parse.js"></script>
+<script>
+{
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cfg = window.EDConfig || {};
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+const fmt = v => v == null ? '–' : (Math.round(v * 10) / 10).toFixed(1).replace('.', ',');
+const state = { testere: [], bilde: null, confirmed: null };
+let drinks = [], names = [];
+
+if (!cfg.SCRIPT_URL) $('#setup').classList.remove('hidden');
+
+// ----- kjente drikker og navn fra regnearket -----
+function gviz() {
+  return new Promise((resolve, reject) => {
+    if (!cfg.SHEET_ID) return reject(new Error('no sheet'));
+    const cb = '__ed' + Date.now() + Math.floor(Math.random() * 1e6), sc = document.createElement('script');
+    const done = () => { delete window[cb]; sc.remove(); clearTimeout(to); };
+    const to = setTimeout(() => { done(); reject(new Error('timeout')); }, 12000);
+    window[cb] = res => { done(); res && res.table ? resolve(res.table) : reject(new Error('gviz')); };
+    sc.onerror = () => { done(); reject(new Error('load')); };
+    sc.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(cfg.SHEET_ID)}/gviz/tq?headers=1&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
+    document.head.append(sc);
+  });
+}
+gviz().then(t => {
+  const ratings = EDParse.rowsToRatings(EDParse.gvizToRows(t));
+  drinks = EDParse.toDrinks(ratings).sort((a, b) => b.scores.length - a.scores.length);
+  const count = new Map();
+  ratings.forEach(r => { const k = r.name.toLowerCase(); if (r.name !== 'Anonym') count.set(k, {name: r.name, n: ((count.get(k) || {}).n || 0) + 1}); });
+  names = [...count.values()].sort((a, b) => b.n - a.n).map(x => x.name);
+  drawNames(); refreshDrink();
+}).catch(() => {});
+
+// ----- drikk: forslag og sjekk mot dubletter -----
+const drikkIn = $('#drikk');
+function matchDrink(v) {
+  const k = EDParse.drinkKey(v);
+  if (!k) return {mode: 'none'};
+  const exact = drinks.find(d => d.key === k);
+  if (exact) return {mode: 'known', drink: exact};
+  if (state.confirmed && state.confirmed.typed === k) return state.confirmed.as ? {mode: 'known', drink: state.confirmed.as} : {mode: 'new'};
+  const sim = drinks.find(d => EDParse.similarDrink(d.drink, v));
+  return sim ? {mode: 'similar', drink: sim} : {mode: 'new'};
+}
+function fillFrom(d) {
+  if (!$('#merke').value && d.brand) $('#merke').value = d.brand;
+  if (!$('#ml').value && d.ml) $('#ml').value = d.ml;
+  if (!$('#pris').value && d.price != null) $('#pris').value = d.price;
+}
+function refreshDrink() {
+  const v = drikkIn.value.trim(), hint = $('#hint'), sugg = $('#sugg');
+  const k = EDParse.drinkKey(v);
+  const list = k ? drinks.filter(d => d.key.includes(k) || EDParse.similarDrink(d.drink, v)).slice(0, 5) : [];
+  const m = matchDrink(v);
+  sugg.classList.toggle('hidden', !list.length || m.mode === 'known');
+  sugg.innerHTML = list.map((d, i) => `<button type="button" data-i="${drinks.indexOf(d)}"><span>${esc(d.drink)}</span><small>${d.scores.length} vurd. · ${fmt(d.total)}</small></button>`).join('');
+  hint.className = 'hint ' + m.mode;
+  hint.classList.toggle('hidden', m.mode === 'none');
+  if (m.mode === 'known') { hint.innerHTML = `Testet før: <b>${esc(m.drink.drink)}</b>. Testen din legges til den.`; fillFrom(m.drink); }
+  else if (m.mode === 'similar') hint.innerHTML = `Mener du <b>${esc(m.drink.drink)}</b>?<div class="row"><button type="button" class="pill gold" data-yes>Ja, det er den</button><button type="button" class="pill" data-no>Nei, det er en ny drikk</button></div>`;
+  else if (m.mode === 'new') hint.innerHTML = 'Ny drikk. Den blir lagt til på topplista.';
+  return m;
+}
+drikkIn.addEventListener('input', () => { state.confirmed = null; refreshDrink(); });
+$('#sugg').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (!b) return; const d = drinks[+b.dataset.i]; drikkIn.value = d.drink; refreshDrink(); });
+$('#hint').addEventListener('click', e => {
+  const k = EDParse.drinkKey(drikkIn.value);
+  if (e.target.closest('[data-yes]')) { const m = matchDrink(drikkIn.value); drikkIn.value = m.drink.drink; state.confirmed = null; refreshDrink(); }
+  else if (e.target.closest('[data-no]')) { state.confirmed = {typed: k, as: null}; refreshDrink(); }
+});
+
+// ----- bilde (gjøres mindre i nettleseren før opplasting) -----
+$('#bilde').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    state.bilde = await resize(f, 1600, 0.82);
+    const box = $('#photo'); box.querySelectorAll('img,.x').forEach(n => n.remove());
+    const im = document.createElement('img'); im.src = state.bilde; im.alt = 'Bilde av boksen'; box.append(im);
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = '×'; x.setAttribute('aria-label', 'Fjern bilde');
+    x.onclick = ev => { ev.preventDefault(); state.bilde = null; im.remove(); x.remove(); $('#bilde').value = ''; };
+    box.append(x);
+  } catch { show('err', 'Klarte ikke å lese bildet. Prøv et annet.'); }
+});
+function resize(file, max, q) {
+  return new Promise((res, rej) => {
+    const img = new Image(), u = URL.createObjectURL(file);
+    img.onload = () => { const s = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); res(c.toDataURL('image/jpeg', q)); };
+    img.onerror = () => { URL.revokeObjectURL(u); rej(); };
+    img.src = u;
+  });
+}
+
+// ----- testere -----
+function addTester(name) {
+  name = String(name || '').trim().slice(0, 40);
+  if (!name || state.testere.some(t => t.navn.toLowerCase() === name.toLowerCase())) return;
+  if (!state.testere.length) store.set('ed-me', name);
+  state.testere.push({navn: name, smak: null, verdi: null, kommentar: ''});
+  drawTesters(); drawNames();
+}
+function drawNames() {
+  const me = store.get('ed-me');
+  const list = [...new Set([me, ...names].filter(Boolean))].filter(n => !state.testere.some(t => t.navn.toLowerCase() === n.toLowerCase())).slice(0, 8);
+  $('#names').innerHTML = list.map(n => `<button type="button" class="pill" data-name="${esc(n)}">+ ${esc(n)}</button>`).join('');
+}
+$('#names').addEventListener('click', e => { const b = e.target.closest('[data-name]'); if (b) addTester(b.dataset.name); });
+$('#addBtn').addEventListener('click', () => { addTester($('#nyNavn').value); $('#nyNavn').value = ''; });
+$('#nyNavn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addTester(e.target.value); e.target.value = ''; } });
+
+function drawTesters() {
+  const box = $('#testers');
+  if (!state.testere.length) { box.innerHTML = `<div class="tester empty-t"><b>Hvem smakte?</b>Skriv navnet ditt over, og legg til de andre som var med.</div>`; return; }
+  box.innerHTML = state.testere.map((t, i) => {
+    const tot = t.smak != null && t.verdi != null ? (t.smak + t.verdi) / 2 : (t.smak ?? t.verdi);
+    const step = (k, l) => `<div class="step"><span>${l}</span><div class="ctl"><button type="button" data-i="${i}" data-k="${k}" data-d="-1" aria-label="${l} ned">−</button><output class="${t[k] == null ? 'empty' : ''}">${t[k] ?? '–'}</output><button type="button" data-i="${i}" data-k="${k}" data-d="1" aria-label="${l} opp">+</button></div></div>`;
+    return `<div class="tester"><div class="th"><b>${esc(t.navn)}</b><span class="tot">${fmt(tot)}</span></div>
+      ${step('smak', 'Smak')}${step('verdi', 'Smak vs. pris')}
+      <input data-note="${i}" maxlength="300" placeholder="Kommentar (valgfritt)" style="margin-top:10px" value="${esc(t.kommentar)}">
+      <button type="button" class="rm" data-rm="${i}">Fjern ${esc(t.navn.split(' ')[0])}</button></div>`;
+  }).join('');
+}
+$('#testers').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.rm) { state.testere.splice(+b.dataset.rm, 1); drawTesters(); drawNames(); return; }
+  if (b.dataset.k) { const t = state.testere[+b.dataset.i], k = b.dataset.k, d = +b.dataset.d; t[k] = t[k] == null ? 5 + (d > 0 ? 1 : 0) : Math.min(10, Math.max(1, t[k] + d)); drawTesters(); }
+});
+$('#testers').addEventListener('input', e => { if (e.target.dataset.note) state.testere[+e.target.dataset.note].kommentar = e.target.value; });
+drawTesters();
+const me = store.get('ed-me'); if (me) addTester(me);
+
+// ----- lagre -----
+function show(kind, html) { const m = $('#msg'); m.className = 'msg ' + kind; m.innerHTML = html; m.scrollIntoView({behavior: 'smooth', block: 'center'}); }
+$('#f').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!cfg.SCRIPT_URL) return show('err', 'Innleggingen er ikke koblet til regnearket ennå.');
+  const m = refreshDrink();
+  if (m.mode === 'none') { drikkIn.focus(); return show('err', 'Skriv inn navnet på drikken.'); }
+  if (m.mode === 'similar') return show('err', `Er «${esc(drikkIn.value.trim())}» det samme som «${esc(m.drink.drink)}»? Svar ja eller nei under navnet.`);
+  if (!state.testere.length) return show('err', 'Legg til minst én testperson.');
+  if (!state.testere.some(t => t.smak != null || t.verdi != null)) return show('err', 'Gi minst én score.');
+  const body = {
+    test: {drikk: m.mode === 'known' ? m.drink.drink : drikkIn.value.trim(), merke: $('#merke').value.trim(), pris: $('#pris').value, ml: $('#ml').value},
+    testere: state.testere.filter(t => t.smak != null || t.verdi != null),
+    bilde: state.bilde
+  };
+  const btn = $('#saveBtn'); btn.disabled = true; btn.textContent = 'Lagrer …';
+  try {
+    const r = await fetch(cfg.SCRIPT_URL, {method: 'POST', body: JSON.stringify(body)});
+    const res = await r.json();
+    if (!res.ok) throw new Error(res.feil || 'Ukjent feil');
+    show('ok', `<b>Takk!</b> ${esc(res.drikk || body.test.drikk)} er lagret. <a href="./">Se topplista</a>`);
+    state.testere.forEach(t => { t.smak = t.verdi = null; t.kommentar = ''; });
+    state.bilde = null; $('#photo').querySelectorAll('img,.x').forEach(n => n.remove()); $('#bilde').value = '';
+    drikkIn.value = ''; ['#merke', '#pris', '#ml'].forEach(s => $(s).value = ''); refreshDrink(); drawTesters();
+  } catch (err) {
+    show('err', 'Kunne ikke lagre: ' + esc(err.message || err) + '. Prøv igjen.');
+  } finally { btn.disabled = false; btn.textContent = 'Lagre test'; }
+});
+}
+</script>
+</body>
+</html>
