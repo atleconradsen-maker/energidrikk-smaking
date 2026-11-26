@@ -133,9 +133,9 @@ body:not(.started) .gate{display:none!important}
 </form>
 <div class="save gate"><button type="submit" form="f" id="saveBtn">Lagre test</button></div>
 
-<script src="config.js"></script>
-<script src="parse.js"></script>
-<script src="badges.js"></script>
+<script src="config.js?v=2026-11-26c"></script>
+<script src="parse.js?v=2026-11-26c"></script>
+<script src="badges.js?v=2026-11-26c"></script>
 <script>
 {
 const $ = s => document.querySelector(s);
@@ -149,20 +149,8 @@ let drinks = [], names = [], allRatings = [];
 if (!cfg.SCRIPT_URL) $('#setup').classList.remove('hidden');
 
 // ----- kjente drikker og navn fra regnearket -----
-function gviz() {
-  return new Promise((resolve, reject) => {
-    if (!cfg.SHEET_ID) return reject(new Error('no sheet'));
-    const cb = '__ed' + Date.now() + Math.floor(Math.random() * 1e6), sc = document.createElement('script');
-    const done = () => { delete window[cb]; sc.remove(); clearTimeout(to); };
-    const to = setTimeout(() => { done(); reject(new Error('timeout')); }, 12000);
-    window[cb] = res => { done(); res && res.table ? resolve(res.table) : reject(new Error('gviz')); };
-    sc.onerror = () => { done(); reject(new Error('load')); };
-    sc.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(cfg.SHEET_ID)}/gviz/tq?headers=1&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
-    document.head.append(sc);
-  });
-}
-gviz().then(t => {
-  const ratings = EDParse.rowsToRatings(EDParse.gvizToRows(t));
+EDParse.loadSheet(cfg.SHEET_ID, 'Tester').then(rows => {
+  const ratings = EDParse.rowsToRatings(rows);
   allRatings = ratings; window.__edRatings = ratings;
   drinks = EDParse.toDrinks(ratings).sort((a, b) => b.scores.length - a.scores.length);
   const count = new Map();

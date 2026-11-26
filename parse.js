@@ -113,6 +113,45 @@
     return 'k' + h.toString(36);
   }
 
-  const api = { cid, drinkKey, similarDrink, imageUrl, gvizToRows, rowsToRatings, jsonToRatings, toDrinks };
+
+  // CSV -> rader (håndterer anførselstegn og linjeskift i felt)
+  function csvToRows(text) {
+    const rows = []; let row = [], cur = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === ',') { row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+      else cur += ch;
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows.filter(r => r.some(c => c !== ''));
+  }
+
+  // Henter en fane fra regnearket. Prøver JSONP to ganger, så CSV. Gir rader med overskrift først.
+  function jsonp(id, sheet, ms) {
+    return new Promise((resolve, reject) => {
+      const cb = '__ed' + Date.now() + Math.floor(Math.random() * 1e6), sc = document.createElement('script');
+      let to;
+      const done = () => { delete window[cb]; sc.remove(); clearTimeout(to); };
+      to = setTimeout(() => { done(); reject(new Error('timeout')); }, ms);
+      window[cb] = res => { done(); res && res.status !== 'error' && res.table ? resolve(gvizToRows(res.table)) : reject(new Error('gviz')); };
+      sc.onerror = () => { done(); reject(new Error('load')); };
+      sc.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(id)}/gviz/tq?headers=1&sheet=${encodeURIComponent(sheet)}&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
+      document.head.append(sc);
+    });
+  }
+  async function loadSheet(id, sheet) {
+    if (!id) throw new Error('no sheet');
+    try { return await jsonp(id, sheet, 15000); } catch {}
+    try { return await jsonp(id, sheet, 20000); } catch {}
+    const r = await fetch(`https://docs.google.com/spreadsheets/d/${encodeURIComponent(id)}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(sheet)}&_=${Date.now()}`, {cache: 'no-store'});
+    const text = await r.text();
+    if (!r.ok || /^\s*</.test(text)) throw new Error('csv');
+    return csvToRows(text);
+  }
+
+  const api = { csvToRows, loadSheet, cid, drinkKey, similarDrink, imageUrl, gvizToRows, rowsToRatings, jsonToRatings, toDrinks };
   root.EDParse = api;
 })(typeof self !== 'undefined' ? self : this);

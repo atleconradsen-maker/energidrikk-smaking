@@ -220,9 +220,9 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
   </footer>
 </div>
 
-<script src="config.js"></script>
-<script src="parse.js"></script>
-<script src="badges.js"></script>
+<script src="config.js?v=2026-11-26c"></script>
+<script src="parse.js?v=2026-11-26c"></script>
+<script src="badges.js?v=2026-11-26c"></script>
 <script>
 {
 const $ = s => document.querySelector(s);
@@ -396,43 +396,59 @@ const navLinks = [...document.querySelectorAll('#nav a')];
 const spy = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) navLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + en.target.id)); }), {rootMargin: '-40% 0px -55% 0px'});
 ['siste', 'toppliste', 'alle'].forEach(id => spy.observe(document.getElementById(id)));
 
-function gviz(sheet) {
-  const id = (window.EDConfig || {}).SHEET_ID;
-  if (!id) return Promise.resolve(null);
-  return new Promise((resolve, reject) => {
-    const cb = '__ed' + Date.now() + Math.floor(Math.random() * 1e6), sc = document.createElement('script');
-    const done = () => { delete window[cb]; sc.remove(); clearTimeout(to); };
-    const to = setTimeout(() => { done(); reject(new Error('timeout')); }, 12000);
-    window[cb] = res => { done(); res && res.status !== 'error' && res.table ? resolve(res.table) : reject(new Error('gviz')); };
-    sc.onerror = () => { done(); reject(new Error('load')); };
-    sc.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(id)}/gviz/tq?headers=1${sheet ? '&sheet=' + encodeURIComponent(sheet) : ''}&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
-    document.head.append(sc);
-  });
+let lastSig = '', firstDone = false, loading = false;
+function readCache() { try { return JSON.parse(localStorage.getItem('ed-cache') || 'null'); } catch { return null; } }
+function apply(rows, likeRows) {
+  ratings = EDParse.rowsToRatings(rows);
+  const m = new Map();
+  (likeRows || []).slice(1).forEach(r => { const id = String(r[1] || '').trim(), fra = String(r[2] || '').trim().toLowerCase(); if (id && fra) { if (!m.has(id)) m.set(id, new Set()); m.get(id).add(fra); } });
+  likes = m; window.EDBadges.setLikes(likes);
+  tests = EDParse.toDrinks(ratings);
+  sessions = toSessions(ratings);
+  $('#updated').textContent = ratings.length ? `${tests.length} drikker · ${ratings.length} vurderinger` : '';
+  window.__edRatings = ratings;
 }
 async function load() {
-  const nb = $('#notice');
+  if (loading) return; loading = true;
+  const nb = $('#notice'), id = (window.EDConfig || {}).SHEET_ID;
   try {
-    const table = await gviz();
-    ratings = table ? EDParse.rowsToRatings(EDParse.gvizToRows(table)) : [];
-    try {
-      const lt = await gviz('Likes'); const m = new Map();
-      EDParse.gvizToRows(lt).slice(1).forEach(r => { const id = String(r[1] || '').trim(), fra = String(r[2] || '').trim().toLowerCase(); if (id && fra) { if (!m.has(id)) m.set(id, new Set()); m.get(id).add(fra); } });
-      likes = m;
-    } catch { likes = new Map(); }
-    window.EDBadges.setLikes(likes);
-    tests = EDParse.toDrinks(ratings);
-    sessions = toSessions(ratings);
+    const rows = await EDParse.loadSheet(id, 'Tester');
+    const likeRows = await EDParse.loadSheet(id, 'Likes').catch(() => (readCache() || {}).likes || []);
+    try { localStorage.setItem('ed-cache', JSON.stringify({rows, likes: likeRows})); } catch {}
+    const sig = JSON.stringify([rows, likeRows]);
+    if (sig !== lastSig) { lastSig = sig; apply(rows, likeRows); render(); }
     nb.classList.toggle('hidden', !!ratings.length);
     nb.innerHTML = ratings.length ? '' : `<span><b>Ingen tester ennå.</b> Bli den første, og ta badgen «Første slurk».</span><a class="add" href="legg-inn.html">+ Legg inn første test</a>`;
-    $('#updated').textContent = ratings.length ? `${tests.length} drikker · ${ratings.length} vurderinger` : '';
-    window.__edRatings = ratings;
-    setTimeout(() => { const B = window.EDBadges, cel = () => B.celebrateNew(ratings); if (B.welcome(false, cel)) return; setTimeout(() => { if (!document.querySelector('.ed-ov')) B.installBanner(); }, 2500); if (!B.monthReveal(ratings)) cel(); else setTimeout(cel, 8000); }, 1200);
   } catch {
-    tests = []; ratings = []; sessions = []; nb.classList.remove('hidden'); nb.innerHTML = '<span>Kunne ikke hente testene. Prøv å laste siden på nytt.</span>';
+    const c = readCache();
+    if (c && c.rows && !lastSig) { lastSig = JSON.stringify([c.rows, c.likes]); apply(c.rows, c.likes); render(); }
+    nb.classList.remove('hidden');
+    nb.innerHTML = ratings.length
+      ? '<span>Fikk ikke kontakt akkurat nå, så du ser testene fra sist. Prøver igjen av seg selv.</span>'
+      : '<span>Kunne ikke hente testene. Sjekk nettet, så prøver siden igjen av seg selv.</span>';
   }
-  render();
+  loading = false;
+  if (!firstDone) {
+    firstDone = true;
+    setTimeout(() => { const B = window.EDBadges, cel = () => B.celebrateNew(ratings); if (B.welcome(false, cel)) return; setTimeout(() => { if (!document.querySelector('.ed-ov')) B.installBanner(); }, 2500); if (!B.monthReveal(ratings)) cel(); else setTimeout(cel, 8000); }, 1200);
+  }
 }
-render(); load();
+// Hjemskjerm-appen på iPhone fortsetter der den var i stedet for å laste på nytt.
+// Derfor: hent nye tester når appen åpnes igjen og hvert minutt, og last siden på nytt hvis det finnes en ny versjon.
+const verOf = html => (/parse\.js\?v=([^"'&]+)/.exec(html) || [])[1] || '';
+async function checkVersion() {
+  try {
+    const mine = verOf(document.documentElement.innerHTML);
+    const live = verOf(await (await fetch('index.html?_=' + Date.now(), {cache: 'no-store'})).text());
+    if (mine && live && live !== mine && sessionStorage.getItem('ed-reloaded') !== live) { sessionStorage.setItem('ed-reloaded', live); location.reload(); }
+  } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { checkVersion(); load(); } });
+window.addEventListener('pageshow', e => { if (e.persisted) { checkVersion(); load(); } });
+window.addEventListener('online', load);
+setInterval(() => { if (document.visibilityState === 'visible') load(); }, 60000);
+{ const c = readCache(); if (c && c.rows) { lastSig = JSON.stringify([c.rows, c.likes]); apply(c.rows, c.likes); } }
+render(); load(); checkVersion();
 }
 </script>
 </body>
