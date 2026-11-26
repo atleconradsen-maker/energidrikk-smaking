@@ -147,6 +147,17 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 
 /* all */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(270px,100%),1fr));gap:14px}
+.nylig{display:flex;flex-direction:column;gap:10px}
+.nt{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:10px 14px 10px 10px}
+.nt .th{width:64px;height:64px;border-radius:12px;overflow:hidden;position:relative;background:repeating-linear-gradient(135deg,#0f1f45 0 8px,#0c1a3b 8px 16px);display:grid;place-items:center;color:#5d72a3}
+.nt .th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.nt .th svg{width:28px;height:28px}
+.nt h3{margin:0 0 3px;font-size:16px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nt .who{font-size:13px;color:var(--muted);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nt .who button{background:none;border:0;padding:0;font:inherit;color:var(--ink);font-weight:700;cursor:pointer}
+.nt .tt{font-family:Anton,sans-serif;font-size:30px;line-height:1;color:var(--gold);text-align:right}
+.nt .q{grid-column:2/4;margin:-4px 0 2px;font-size:14px;font-style:italic;color:#cdd6ea}
+.more{align-self:center;margin-top:4px;background:none;border:1px solid var(--line);color:var(--ink);font:inherit;font-weight:700;border-radius:99px;padding:10px 18px;cursor:pointer}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
 .card .im{height:160px;position:relative;background:repeating-linear-gradient(135deg,#0f1f45 0 12px,#0c1a3b 12px 24px);display:grid;place-items:center;color:#5d72a3}
 .card .im img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -192,6 +203,7 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
   <div class="notice hidden" id="notice"></div>
 
   <section id="siste"></section>
+  <section id="nylig"></section>
   <section id="prat"></section>
   <section id="kaaringer"></section>
   <section id="folk"></section>
@@ -221,7 +233,7 @@ const MND = ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt
 const dato = t => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t || ''); return m ? `${+m[3]}. ${MND[+m[2] - 1]} ${m[1]}` : ''; };
 const CAN = `<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8l1 2v14l-1 2H8l-1-2V5z"/><path d="M7 7h10M7 17h10"/><path d="M13 9l-2.5 3.5h3L11 16"/></svg>`;
 
-let ratings = [], likes = new Map(), tests = [], sortKey = 'total', allSort = 'time';
+let ratings = [], likes = new Map(), tests = [], sessions = [], nyligN = 6, sortKey = 'total', allSort = 'time';
 
 const byTotal = (a, b) => (b.total ?? -1) - (a.total ?? -1);
 const perL = v => v == null ? '' : kr(Math.round(v * 10) / 10) + '/l';
@@ -230,10 +242,27 @@ const byTime = (a, b) => (b.time || '').localeCompare(a.time || '');
 const bar = (label, v, size) => `<div class="bar-row"><span>${label}${label === 'Smak vs. pris' ? window.EDBadges.IB : ''}</span>${window.EDBadges.meter(v, size || '')}<b>${f1(v)}</b></div>`;
 const img = (t, cls) => t.photo ? `<img class="${cls || ''}" src="${esc(t.photo)}" alt="${esc(t.drink)}" loading="lazy" onerror="this.remove()">` : '';
 
+// Én «test» = én innsending: samme tidspunkt og samme drikk (kan ha flere testere)
+function toSessions(rs) {
+  const m = new Map();
+  for (const r of rs) { const k = r.time + '|' + EDParse.drinkKey(r.drink); if (!m.has(k)) m.set(k, []); m.get(k).push(r); }
+  return [...m.values()].map(g => {
+    const d = tests.find(x => x.key === EDParse.drinkKey(g[0].drink)) || {};
+    const pick = f => (g.find(r => r[f] != null && r[f] !== '') || {})[f] ?? null;
+    const taste = avg(g.map(r => r.taste)), value = avg(g.map(r => r.value));
+    const price = pick('price'), ml = pick('ml');
+    return { key: d.key, drink: d.drink || g[0].drink, brand: pick('brand') || d.brand || '', time: g[0].time, price, ml,
+      perL: price != null && ml ? price / ml * 1000 : null, photo: pick('photo') || d.photo || '',
+      notes: g.filter(r => r.note).map(r => ({name: r.name, text: r.note})), scores: g.map(r => ({name: r.name, taste: r.taste, value: r.value})),
+      taste, value, total: taste != null && value != null ? (taste + value) / 2 : (taste ?? value), drinkAll: d };
+  }).sort(byTime);
+}
+const drinkSessions = key => sessions.filter(x => x.key === key).length;
+
 function renderHero() {
   const box = $('#siste');
-  if (!tests.length) { box.innerHTML = `<div class="empty"><b>Ingen tester publisert ennå</b>Første test dukker opp her så snart den er lagt inn.</div>`; return; }
-  const t = [...tests].sort(byTime)[0];
+  if (!sessions.length) { box.innerHTML = `<div class="empty"><b>Ingen tester publisert ennå</b>Første test dukker opp her så snart den er lagt inn.</div>`; return; }
+  const t = sessions[0], d = t.drinkAll || {}, nS = drinkSessions(t.key);
   box.innerHTML = `<div class="hero">
     <div class="shot">${t.photo ? img(t, 'photo') : ''}<div class="ph">${CAN}Bilde av boksen</div>${dato(t.time) ? `<div class="badge">${esc(dato(t.time))}</div>` : ''}</div>
     <div class="hero-info">
@@ -246,9 +275,23 @@ function renderHero() {
       ${t.scores.length ? `<div class="chips">${t.scores.slice(0, 8).map(s => `<button type="button" class="chip" data-person="${esc(s.name)}">${esc(s.name.split(' ')[0])} <b>${s.taste ?? '–'} / ${s.value ?? '–'}</b></button>`).join('')}</div>` : ''}
       ${t.scores.length > 8 ? `<div class="meta">+ ${t.scores.length - 8} til · ${nR(t)}</div>` : ''}
       ${t.notes.length ? `<p class="quote">${quote(t)}</p>` : ''}
+      ${nS > 1 ? `<div class="split">Snitt for drikken etter <b>${nS} tester</b>: <b>${f1(d.total)}</b> (${nR(d)})</div>` : ''}
     </div></div>
 `;
 }
+
+function renderNylig() {
+  const box = $('#nylig'), rest = sessions.slice(1);
+  if (!rest.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="sec-h"><h2 class="h">Siste tester</h2></div><div class="nylig">${rest.slice(0, nyligN).map(t => {
+    const who = t.scores.map(s => s.name);
+    const whoH = who.slice(0, 3).map(n => `<button type="button" data-person="${esc(n)}">${esc(n.split(' ')[0])}</button>`).join(', ') + (who.length > 3 ? ` +${who.length - 3}` : '');
+    return `<div class="nt"><div class="th">${t.photo ? `<img src="${esc(t.photo)}" alt="" loading="lazy" onerror="this.remove()">` : ''}${CAN}</div>
+      <div style="min-width:0"><h3>${esc(t.drink)}</h3><div class="who">${whoH} · ${esc(dato(t.time))}</div>${window.EDBadges.meter(t.total, 'sm')}</div>
+      <div class="tt">${f1(t.total)}</div>${t.notes.length ? `<p class="q">${quote(t)}</p>` : ''}</div>`; }).join('')}</div>
+    ${rest.length > nyligN ? `<div style="display:flex;justify-content:center"><button type="button" class="more" data-more>Vis flere (${rest.length - nyligN})</button></div>` : ''}`;
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-more]')) { nyligN += 10; renderNylig(); } });
 
 function best(list, key, low) {
   const l = list.filter(t => t[key] != null);
@@ -353,7 +396,7 @@ function renderAll() {
   $('#alle').innerHTML = html;
 }
 
-function render() { renderHero(); renderPrat(); renderAwards(); renderFolk(); renderBoard(); renderAll(); }
+function render() { renderHero(); renderNylig(); renderPrat(); renderAwards(); renderFolk(); renderBoard(); renderAll(); }
 
 document.addEventListener('click', e => {
   const p = e.target.closest('[data-sort]'); if (p) { sortKey = p.dataset.sort; renderBoard(); return; }
@@ -395,13 +438,14 @@ async function load() {
     } catch { likes = new Map(); }
     window.EDBadges.setLikes(likes);
     tests = EDParse.toDrinks(ratings);
+    sessions = toSessions(ratings);
     nb.classList.toggle('hidden', !!ratings.length);
     nb.innerHTML = ratings.length ? '' : `<span><b>Ingen tester ennå.</b> Bli den første, og ta badgen «Første slurk».</span><a class="add" href="legg-inn.html">+ Legg inn første test</a>`;
     $('#updated').textContent = ratings.length ? `${tests.length} drikker · ${ratings.length} vurderinger` : '';
     window.__edRatings = ratings;
     setTimeout(() => { const B = window.EDBadges, cel = () => B.celebrateNew(ratings); if (B.welcome(false, cel)) return; setTimeout(() => { if (!document.querySelector('.ed-ov')) B.installBanner(); }, 2500); if (!B.monthReveal(ratings)) cel(); else setTimeout(cel, 8000); }, 1200);
   } catch {
-    tests = []; ratings = []; nb.classList.remove('hidden'); nb.innerHTML = '<span>Kunne ikke hente testene. Prøv å laste siden på nytt.</span>';
+    tests = []; ratings = []; sessions = []; nb.classList.remove('hidden'); nb.innerHTML = '<span>Kunne ikke hente testene. Prøv å laste siden på nytt.</span>';
   }
   render();
 }
