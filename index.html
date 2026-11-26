@@ -37,6 +37,16 @@ button{font:inherit;color:inherit;cursor:pointer}
 .wrap{max-width:1200px;margin:0 auto;padding:24px clamp(16px,3vw,32px) 72px;display:flex;flex-direction:column;gap:44px}
 .h{font-family:Anton,Impact,sans-serif;font-weight:400;letter-spacing:.3px;text-transform:uppercase;margin:0;line-height:1.05}
 .lbl{font-size:12px;font-weight:800;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase}
+/* bunnmeny */
+.toplink{color:var(--ink);font-weight:700;font-size:15px;text-decoration:none;padding:10px 6px}
+.qbtn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-family:Anton,sans-serif;font-size:20px;cursor:pointer}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+nav.bnav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#060d20;border-top:1px solid var(--line);padding:0 0 env(safe-area-inset-bottom);border-radius:0;gap:0}
+nav.bnav .in{max-width:720px;width:100%;margin:0 auto;height:72px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:start;padding-top:8px}
+nav.bnav a{text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--muted);padding:4px 0;min-height:48px;border-radius:0;background:none}
+nav.bnav a.on{color:var(--gold);background:none}
+nav.bnav a.plus{justify-self:center;margin-top:-26px;width:62px;height:62px;border-radius:50%;background:var(--gold);color:var(--ink-on-gold);display:grid;place-items:center;box-shadow:0 0 0 5px var(--bg);padding:0;min-height:0}
+nav.bnav a.plus:active{transform:scale(.95)}
 .hidden{display:none!important}
 
 /* header */
@@ -46,9 +56,6 @@ header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-
 .brand img{width:64px;height:64px;border-radius:50%;box-shadow:0 0 0 3px var(--gold),0 8px 24px rgba(0,0,0,.5);background:#fff}
 .brand .h{font-size:32px}.brand .h span{color:var(--gold)}
 .brand small{display:block;color:var(--muted);font-size:14px;margin-top:3px}
-nav{display:flex;gap:4px;background:var(--panel);padding:4px;border-radius:999px;border:1px solid var(--line)}
-nav a{padding:10px 16px;border-radius:999px;color:var(--muted);font-weight:700;font-size:14px;text-decoration:none;white-space:nowrap}
-nav a.on{background:var(--ink);color:var(--bg)}
 nav a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
 .notice{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;color:var(--muted);display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between}
@@ -180,7 +187,6 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
 @media(max-width:600px){
   header{position:static;margin:0}
   .brand img{width:48px;height:48px}.brand .h{font-size:24px}.brand small{display:none}
-  .hdr-r{width:100%}nav{width:100%}nav a{flex:1;text-align:center;padding:11px 6px}.add{width:100%;justify-content:center}
   .shot{min-height:260px}
   .bar-row{grid-template-columns:96px minmax(0,1fr) 30px}
   .wrap{gap:36px}
@@ -196,12 +202,8 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
       <div><div class="h">ENERGY <span>LAB</span></div><small>Smak og smak vs. pris får hver sin score fra 1 til 10</small></div>
     </a>
     <div class="hdr-r">
-    <nav id="nav">
-      <a href="#siste" class="on">Siste tester</a>
-      <a href="#toppliste">Toppliste</a>
-      <a href="#alle">Alle drikker</a>
-    </nav>
-    <a class="add" href="legg-inn.html">+ Legg inn test</a>
+      <a class="toplink" href="om.html">Om</a>
+      <button type="button" class="qbtn" data-welcome aria-label="Slik funker det">?</button>
     </div>
   </header>
 
@@ -220,9 +222,16 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
   </footer>
 </div>
 
-<script src="config.js?v=2026-11-26c"></script>
-<script src="parse.js?v=2026-11-26c"></script>
-<script src="badges.js?v=2026-11-26c"></script>
+<nav class="bnav" aria-label="Hovedmeny"><div class="in">
+  <a href="#siste" data-s="siste" class="on"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Hjem</a>
+  <a href="#toppliste" data-s="toppliste"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg>Toppliste</a>
+  <a href="legg-inn.html" class="plus" aria-label="Legg inn test"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
+  <a href="#alle" data-s="alle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8l1 2v14l-1 2H8l-1-2V5z"/><path d="M13 9l-2.5 3.5h3L11 16"/></svg>Drikker</a>
+  <a href="#" data-badges><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5"/></svg>Badges</a>
+</div></nav>
+<script src="config.js?v=2026-11-26d"></script>
+<script src="parse.js?v=2026-11-26d"></script>
+<script src="badges.js?v=2026-11-26d"></script>
 <script>
 {
 const $ = s => document.querySelector(s);
@@ -388,12 +397,13 @@ document.addEventListener('click', e => {
   const lk = e.target.closest('[data-like]'); if (lk) { toggleLike(lk.dataset.like); return; }
   if (e.target.closest('[data-rename]')) { askName(); return; }
   if (e.target.closest('[data-welcome]')) { window.EDBadges.welcome(true); return; }
+  if (e.target.closest('[data-badges]')) { e.preventDefault(); window.EDBadges.openInfo(ratings); return; }
   if (e.target.closest('[data-info]')) window.EDBadges.openInfo(ratings);
 });
 
 // active nav link while scrolling
-const navLinks = [...document.querySelectorAll('#nav a')];
-const spy = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) navLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + en.target.id)); }), {rootMargin: '-40% 0px -55% 0px'});
+const navLinks = [...document.querySelectorAll('nav.bnav a[data-s]')];
+const spy = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) navLinks.forEach(a => a.classList.toggle('on', a.dataset.s === en.target.id)); }), {rootMargin: '-40% 0px -55% 0px'});
 ['siste', 'toppliste', 'alle'].forEach(id => spy.observe(document.getElementById(id)));
 
 let lastSig = '', firstDone = false, loading = false;
