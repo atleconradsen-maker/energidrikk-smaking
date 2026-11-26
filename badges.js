@@ -1,4 +1,4 @@
-// Energidrikk Smaking – badges, kåringer, profiler og konfetti. Brukes av forsiden og «Legg inn test».
+// ENERGY LAB – badges, kåringer, profiler og konfetti. Brukes av forsiden og «Legg inn test».
 (function (root) {
   const K = s => root.EDParse.drinkKey(s);
   const nk = s => String(s || '').trim().toLowerCase();
@@ -288,7 +288,7 @@
     const row = (icon, name, how) => badgeHtml({icon, name, how, done: true});
     let done = false;
     sheet(`<div class="ed-intro"><div class="ed-hero" aria-hidden="true">⚡🏅🤠</div>
-      <h3>Velkommen til Energidrikk Smaking!</h3>
+      <h3>Velkommen til ENERGY LAB!</h3>
       <p class="ksub" style="text-align:center;margin:0 0 14px">Her tester vi energidrikker, gir batterier og samler badges. Slik funker det:</p>
       <div class="blist">
         ${row('🥤', 'Legg inn tester', 'Hver gang du drikker en: gi smak og smak vs. pris 1–10 batterier')}

@@ -1,4 +1,4 @@
-# Energidrikk Smaking
+# ENERGY LAB
 
 Energidrikktest. Alle kan legge inn en test når de drikker en. Smak og smak vs. pris, 1–10. Total = snittet av de to.
 
