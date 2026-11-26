@@ -197,7 +197,7 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
     </a>
     <div class="hdr-r">
     <nav id="nav">
-      <a href="#siste" class="on">Siste test</a>
+      <a href="#siste" class="on">Siste tester</a>
       <a href="#toppliste">Toppliste</a>
       <a href="#alle">Alle drikker</a>
     </nav>
@@ -208,7 +208,6 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
   <div class="notice hidden" id="notice"></div>
 
   <section id="siste"></section>
-  <section id="nylig"></section>
   <section id="prat"></section>
   <section id="kaaringer"></section>
   <section id="folk"></section>
@@ -262,33 +261,11 @@ function toSessions(rs) {
       taste, value, total: taste != null && value != null ? (taste + value) / 2 : (taste ?? value), drinkAll: d, rows: g };
   }).sort(byTime);
 }
-const drinkSessions = key => sessions.filter(x => x.key === key).length;
-
-function renderHero() {
-  const box = $('#siste');
-  if (!sessions.length) { box.innerHTML = `<div class="empty"><b>Ingen tester publisert ennå</b>Første test dukker opp her så snart den er lagt inn.</div>`; return; }
-  const t = sessions[0], d = t.drinkAll || {}, nS = drinkSessions(t.key);
-  box.innerHTML = `<div class="hero">
-    <div class="shot">${t.photo ? img(t, 'photo') : ''}<div class="ph">${CAN}Bilde av boksen</div>${dato(t.time) ? `<div class="badge">${esc(dato(t.time))}</div>` : ''}</div>
-    <div class="hero-info">
-      <div><div class="lbl" style="color:var(--gold)">Siste test</div>
-        <h1 class="h h1">${esc(t.drink)}</h1><div class="meta">${esc(metaLine(t))}</div></div>
-      <div class="score-big"><div class="n">${f1(t.total)}</div>
-        <div style="padding-bottom:6px"><div class="lbl">Totalscore</div><div class="split">Smak <b>${f1(t.taste)}</b> + smak vs. pris <b>${f1(t.value)}</b></div></div></div>
-      <div>${window.EDBadges.meter(t.total, 'lg')}</div>
-      <div class="bars">${bar('Smak', t.taste, 'sm')}${bar('Smak vs. pris', t.value, 'sm')}</div>
-      ${t.scores.length ? `<div class="chips">${t.scores.slice(0, 8).map(s => `<button type="button" class="chip" data-person="${esc(s.name)}">${esc(s.name.split(' ')[0])} <b>${s.taste ?? '–'} / ${s.value ?? '–'}</b></button>`).join('')}</div>` : ''}
-      ${t.scores.length > 8 ? `<div class="meta">+ ${t.scores.length - 8} til · ${nR(t)}</div>` : ''}
-      ${t.notes.length ? `<p class="quote">${quote(t)}</p>` : ''}
-      ${nS > 1 ? `<div class="split">Snitt for drikken etter <b>${nS} tester</b>: <b>${f1(d.total)}</b> (${nR(d)})</div>` : ''}
-    </div></div>
-`;
-}
 
 const THUMB = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M7 10l4-8a3 3 0 0 1 3 3v4h5.5a2 2 0 0 1 2 2.3l-1.4 8A2 2 0 0 1 18.1 21H7"/></svg>';
 function renderNylig() {
-  const box = $('#nylig'), rest = sessions.slice(1, 13);
-  if (!rest.length) { box.innerHTML = ''; return; }
+  const box = $('#siste'), rest = sessions.slice(0, 12);
+  if (!rest.length) { box.innerHTML = `<div class="empty"><b>Ingen tester publisert ennå</b>Første test dukker opp her så snart den er lagt inn.</div>`; return; }
   box.innerHTML = `<div class="sec-h"><h2 class="h">Siste tester</h2><a class="seall" href="#alle">Se alle</a></div><div class="nylig">${rest.map(t => {
     const who = t.scores.map(s => s.name);
     const whoH = who.slice(0, 2).map(n => `<button type="button" data-person="${esc(n)}">${esc(n)}</button>`).join(' og ') + (who.length > 2 ? ` +${who.length - 2}` : '');
@@ -402,7 +379,7 @@ function renderAll() {
   $('#alle').innerHTML = html;
 }
 
-function render() { renderHero(); renderNylig(); renderPrat(); renderAwards(); renderFolk(); renderBoard(); renderAll(); }
+function render() { renderNylig(); renderPrat(); renderAwards(); renderFolk(); renderBoard(); renderAll(); }
 
 document.addEventListener('click', e => {
   const p = e.target.closest('[data-sort]'); if (p) { sortKey = p.dataset.sort; renderBoard(); return; }
