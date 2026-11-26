@@ -8,6 +8,13 @@
 <meta property="og:title" content="Energidrikk Smaking">
 <meta property="og:image" content="logo.jpg">
 <link rel="icon" href="logo.jpg">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#07122b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Energidrikk">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -193,7 +200,7 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
 
   <footer>
     <span>Totalscoren er snittet av smak og smak vs. pris. Alle kan legge inn en test, og hver vurdering teller likt.</span>
-    <span><span id="updated"></span> <button type="button" data-welcome style="background:none;border:0;color:var(--gold);font:inherit;font-weight:700;cursor:pointer;padding:4px 0">Slik funker det</button> · <a href="om.html" style="font-weight:700">Om siden</a></span>
+    <span><span id="updated"></span> <button type="button" data-welcome style="background:none;border:0;color:var(--gold);font:inherit;font-weight:700;cursor:pointer;padding:4px 0">Slik funker det</button> · <button type="button" data-a2hs style="background:none;border:0;color:var(--gold);font:inherit;font-weight:700;cursor:pointer;padding:4px 0">Lagre som app</button> · <a href="om.html" style="font-weight:700">Om siden</a></span>
   </footer>
 </div>
 
@@ -220,7 +227,7 @@ const byTotal = (a, b) => (b.total ?? -1) - (a.total ?? -1);
 const perL = v => v == null ? '' : kr(Math.round(v * 10) / 10) + '/l';
 const metaLine = t => [t.brand, t.ml ? t.ml + '\u00a0ml' : '', kr(t.price), perL(t.perL)].filter(Boolean).join(' · ');
 const byTime = (a, b) => (b.time || '').localeCompare(a.time || '');
-const bar = (label, v, size) => `<div class="bar-row"><span>${label}</span>${window.EDBadges.meter(v, size || '')}<b>${f1(v)}</b></div>`;
+const bar = (label, v, size) => `<div class="bar-row"><span>${label}${label === 'Smak vs. pris' ? window.EDBadges.IB : ''}</span>${window.EDBadges.meter(v, size || '')}<b>${f1(v)}</b></div>`;
 const img = (t, cls) => t.photo ? `<img class="${cls || ''}" src="${esc(t.photo)}" alt="${esc(t.drink)}" loading="lazy" onerror="this.remove()">` : '';
 
 function renderHero() {
@@ -256,7 +263,7 @@ function renderAwards() {
     ['Bunnskraperen', n > 1 ? best(tests, 'total', true) : null, 'total', t => 'Laveste totalscore så langt']
   ];
   $('#kaaringer').innerHTML = `<div class="sec-h"><h2 class="h">Kåringer</h2></div><div class="awards">${aw.map(([title, t, k, sub]) => t
-    ? `<div class="award"><div class="top"><div class="t">${title}</div><div class="s">${f1(t[k])}</div></div><div class="p">${esc(t.drink)}</div>${window.EDBadges.meter(t[k], 'sm')}<div class="sub">${esc(sub(t))}</div></div>`
+    ? `<div class="award"><div class="top"><div class="t">${title}${title === 'Mest for pengene' ? window.EDBadges.IB : ''}</div><div class="s">${f1(t[k])}</div></div><div class="p">${esc(t.drink)}</div>${window.EDBadges.meter(t[k], 'sm')}<div class="sub">${esc(sub(t))}</div></div>`
     : `<div class="award none"><div class="t">${title}</div><div class="p">Kåres når testene er inne</div></div>`).join('')}</div>`;
 }
 
@@ -318,7 +325,7 @@ function renderBoard() {
   const B = window.EDBadges, ps = B.peopleStats(ratings).sort((a, b) => b.points - a.points || b.n - a.n);
   $('#toppliste').innerHTML = `<div class="main">
       <div class="sec-h"><h2 class="h">Toppliste</h2><div class="pills">${opts.map(([k, l]) => `<button class="pill${k === sortKey ? ' on' : ''}" data-sort="${k}">${l}</button>`).join('')}</div></div>
-      ${tests.length ? `<div class="board"><div class="br head"><span>#</span><span>Drikk</span><span class="c">Smak</span><span class="c">Verdi</span><span class="c">Kr/l</span><span class="tot">Total</span></div>${rows}</div>`
+      ${tests.length ? `<div class="board"><div class="br head"><span>#</span><span>Drikk</span><span class="c">Smak</span><span class="c">Verdi${window.EDBadges.IB}</span><span class="c">Kr/l</span><span class="tot">Total</span></div>${rows}</div>`
         : `<div class="empty"><b>Topplista er tom</b>Den fylles opp etter hvert som drikkene testes.</div>`}
     </div>
     <div class="side"><h2 class="h" style="font-size:28px;margin-bottom:4px">Testere</h2>
@@ -392,7 +399,7 @@ async function load() {
     nb.innerHTML = ratings.length ? '' : `<span><b>Ingen tester ennå.</b> Bli den første, og ta badgen «Første slurk».</span><a class="add" href="legg-inn.html">+ Legg inn første test</a>`;
     $('#updated').textContent = ratings.length ? `${tests.length} drikker · ${ratings.length} vurderinger` : '';
     window.__edRatings = ratings;
-    setTimeout(() => { const B = window.EDBadges, cel = () => B.celebrateNew(ratings); if (B.welcome(false, cel)) return; if (!B.monthReveal(ratings)) cel(); else setTimeout(cel, 8000); }, 1200);
+    setTimeout(() => { const B = window.EDBadges, cel = () => B.celebrateNew(ratings); if (B.welcome(false, cel)) return; setTimeout(() => { if (!document.querySelector('.ed-ov')) B.installBanner(); }, 2500); if (!B.monthReveal(ratings)) cel(); else setTimeout(cel, 8000); }, 1200);
   } catch {
     tests = []; ratings = []; nb.classList.remove('hidden'); nb.innerHTML = '<span>Kunne ikke hente testene. Prøv å laste siden på nytt.</span>';
   }

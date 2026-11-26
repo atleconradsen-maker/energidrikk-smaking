@@ -1,0 +1,15 @@
+{
+  "name": "Energidrikk Smaking",
+  "short_name": "Energidrikk",
+  "description": "Test energidrikker, gi batterier og samle badges.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#07122b",
+  "theme_color": "#07122b",
+  "lang": "no",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Legg inn test – Energidrikk Smaking</title>
 <link rel="icon" href="logo.jpg">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#07122b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Energidrikk">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -290,7 +297,7 @@ function drawTesters() {
   if (!state.testere.length) { box.innerHTML = `<div class="tester empty-t"><b>Ingen testere</b>Legg til deg selv eller andre under.</div>`; return; }
   box.innerHTML = state.testere.map((t, i) => {
     const tot = t.smak != null && t.verdi != null ? (t.smak + t.verdi) / 2 : (t.smak ?? t.verdi);
-    const step = (k, l) => `<div class="step"><span>${l}</span><div class="ctl"><button type="button" data-i="${i}" data-k="${k}" data-d="-1" aria-label="${l} ned">−</button><output class="${t[k] == null ? 'empty' : ''}">${t[k] ?? '–'}</output><button type="button" data-i="${i}" data-k="${k}" data-d="1" aria-label="${l} opp">+</button></div></div>`;
+    const step = (k, l) => `<div class="step"><span>${l}${k === 'verdi' && window.EDBadges ? window.EDBadges.IB : ''}</span><div class="ctl"><button type="button" data-i="${i}" data-k="${k}" data-d="-1" aria-label="${l} ned">−</button><output class="${t[k] == null ? 'empty' : ''}">${t[k] ?? '–'}</output><button type="button" data-i="${i}" data-k="${k}" data-d="1" aria-label="${l} opp">+</button></div></div>`;
     return `<div class="tester"><div class="th"><b>${esc(t.navn)}</b><span class="tot">${fmt(tot)}</span></div>
       <div style="margin:4px 0 2px">${window.EDBadges ? window.EDBadges.meter(tot, 'sm still') : ''}</div>
       ${step('smak', 'Smak')}${step('verdi', 'Smak vs. pris')}

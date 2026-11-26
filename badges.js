@@ -190,6 +190,15 @@
 .ed-big{text-align:center;padding:10px 0}.ed-big .e{font-size:64px;line-height:1.1}
 .ed-big .nm{font-family:Anton,sans-serif;font-size:36px;text-transform:uppercase;margin:6px 0}
 .ed-confetti{position:fixed;inset:0;pointer-events:none;z-index:80}
+.ib{display:inline-grid;place-items:center;width:20px;height:20px;margin-left:6px;border-radius:50%;border:1.5px solid var(--gold);background:transparent;color:var(--gold);font:italic 700 12px/1 Georgia,serif;cursor:pointer;padding:0;vertical-align:middle;position:relative}
+.ib::after{content:'';position:absolute;inset:-12px}
+.vt{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;margin:10px 0}
+.vt b{font-family:Anton,sans-serif;font-size:22px;color:var(--gold);text-align:right}
+.a2hs{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:55;max-width:520px;margin:0 auto;display:flex;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--gold);border-radius:18px;padding:12px 12px 12px 14px;box-shadow:0 12px 40px rgba(0,0,0,.55);font-size:14px}
+.a2hs .e{font-size:28px}.a2hs b{display:block;font-size:15px}.a2hs small{color:var(--muted)}
+.a2hs .go{flex:none;border:0;border-radius:999px;background:var(--gold);color:#1a1408;font:inherit;font-weight:800;padding:10px 14px;cursor:pointer}
+.a2hs .no{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:none;color:var(--muted);font-size:22px;cursor:pointer}
+.steps{margin:8px 0 0;padding-left:22px}.steps li{margin:8px 0}
 .ed-hero{font-size:44px;text-align:center;letter-spacing:6px;margin:4px 0 6px}
 .ed-intro h3{text-align:center;font-size:28px;line-height:1.05;padding:0 30px}
 .ed-btns{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:18px}
@@ -287,6 +296,7 @@
         ${row('👍', 'Gi cred', 'Lik kommentarer du er enig i. Flest likes blir «Folkets stemme»')}
         ${row('🤠', 'Bli månedens koffeinkonge/-dronning', 'Mest bidrag i måneden vinner. En test gir 3 poeng og en kommentar 1')}
         ${row('🏆', 'Bli årets', 'Årets vinner får et merke med årstallet (som ’26) på profilbildet for alltid')}
+        ${row('📲', 'Lagre som app', 'På iPhone: trykk Del-knappen i Safari og velg «Legg til på Hjem-skjerm»')}
       </div>
       <div class="ed-btns"><button type="button" class="ed-cta" data-wgo>Kom i gang</button><button type="button" class="ed-link" data-winfo>Se alle badges</button></div></div>`,
       (ov, close) => {
@@ -298,6 +308,50 @@
       });
     return true;
   }
+
+  // «i» for smak vs. pris
+  function valueInfo() {
+    sheet(`<h3 style="padding-right:50px">Smak vs. pris</h3>
+      <p class="ksub" style="font-size:16px;color:var(--ink)">Hvor mye smak får du for pengene? Tenk på hva du betalte, og hvor stor boksen var, og spør deg selv: <b>var den verdt det?</b></p>
+      <div class="vt"><b>10</b><span>Verdt hver krone. Kjøper gjerne igjen til den prisen</span><b>7</b><span>God handel</span><b>5</b><span>Helt greit for prisen</span><b>3</b><span>Litt dyr for det du får</span><b>1</b><span>Altfor dyr for smaken</span></div>
+      <p class="ksub">En billig boks som smaker greit kan fint få høyere smak vs. pris enn en dyr boks som smaker litt bedre. Vil du se bare prisen, sorter topplista på «Kr per liter».</p>
+      <p class="ksub">Totalscoren er snittet av <b>smak</b> og <b>smak vs. pris</b>.</p>`);
+  }
+
+  // «Legg til på Hjem-skjerm»
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  let deferred = null;
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; });
+  function installInfo() {
+    const share = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px" aria-label="Del"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v8h14v-8"/></svg>';
+    sheet(`<h3 style="padding-right:50px">Lagre som app</h3>
+      <p class="ksub" style="font-size:16px;color:var(--ink)">Legg siden på hjemskjermen, så åpner den seg som en egen app uten adresselinje.</p>
+      <div class="lbl2">iPhone og iPad (Safari)</div>
+      <ol class="steps"><li>Åpne siden i <b>Safari</b></li><li>Trykk på Del-knappen ${share} nederst</li><li>Bla ned og velg <b>«Legg til på Hjem-skjerm»</b></li><li>Trykk <b>Legg til</b></li></ol>
+      <div class="lbl2">Android (Chrome)</div>
+      <ol class="steps"><li>Trykk på menyen <b>⋮</b> øverst til høyre</li><li>Velg <b>«Legg til på startskjermen»</b> eller <b>«Installer app»</b></li></ol>
+      ${deferred ? '<button type="button" class="ed-cta" data-inst style="margin-top:16px">Installer nå</button>' : ''}`,
+      (ov, close) => { const b = ov.querySelector('[data-inst]'); if (b) b.addEventListener('click', async () => { close(); deferred.prompt(); deferred = null; }); });
+  }
+  function installBanner() {
+    if (isStandalone()) return;
+    try { if (localStorage.getItem('ed-a2hs-off')) return; } catch { return; }
+    if (!isIOS && !deferred) return;
+    if (document.querySelector('.a2hs')) return;
+    const d = document.createElement('div'); d.className = 'a2hs'; d.setAttribute('role', 'status');
+    d.innerHTML = `<span class="e" aria-hidden="true">📲</span><span style="flex:1"><b>Lagre som app</b><small>${isIOS ? 'Del-knappen i Safari → «Legg til på Hjem-skjerm»' : 'Legg siden på startskjermen'}</small></span><button type="button" class="go">Vis meg</button><button type="button" class="no" aria-label="Ikke vis igjen">×</button>`;
+    const off = () => { try { localStorage.setItem('ed-a2hs-off', '1'); } catch {} d.remove(); };
+    d.querySelector('.go').addEventListener('click', () => { off(); if (deferred && !isIOS) { deferred.prompt(); deferred = null; } else installInfo(); });
+    d.querySelector('.no').addEventListener('click', off);
+    document.body.append(d);
+  }
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-vinfo]')) { e.preventDefault(); valueInfo(); }
+    else if (e.target.closest('[data-a2hs]')) { e.preventDefault(); installInfo(); }
+  });
+  const IB = '<button type="button" class="ib" data-vinfo aria-label="Hva betyr smak vs. pris?">i</button>';
 
   // Feiring når du har låst opp noe nytt siden sist du var innom
   function celebrateNew(ratings) {
@@ -342,5 +396,5 @@
     return `<span class="bm ${size}" role="img" aria-label="${v == null ? 'Ingen score' : f1(v) + ' av 10 batterier'}">${h}${showNum ? `<span class="num">${f1(v)}</span>` : ''}</span>`;
   }
 
-  root.EDBadges = { welcome, celebrateNew, meter, setLikes: m => { LIKES = m || new Map(); }, likesOf, BADGES, badgesOf, peopleStats, titles, pointsIn, prevMonth, monthName, yearWinners, openProfile, openInfo, monthReveal, confetti, sheet, badgeHtml, avatarHtml, nk };
+  root.EDBadges = { IB, valueInfo, installInfo, installBanner, isStandalone, welcome, celebrateNew, meter, setLikes: m => { LIKES = m || new Map(); }, likesOf, BADGES, badgesOf, peopleStats, titles, pointsIn, prevMonth, monthName, yearWinners, openProfile, openInfo, monthReveal, confetti, sheet, badgeHtml, avatarHtml, nk };
 })(typeof self !== 'undefined' ? self : this);
