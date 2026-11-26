@@ -382,8 +382,11 @@
   }
 
   // ---------- batterimåler (1–10) ----------
-  const BAT_E = '<svg viewBox="0 0 14 24" aria-hidden="true"><rect x="4.5" y=".5" width="5" height="2.6" rx="1" fill="#2a3f73"/><rect x="1.2" y="2.8" width="11.6" height="20.4" rx="2.6" fill="#0b1834" stroke="#2a3f73" stroke-width="1.4"/></svg>';
+  const BAT_E = '<svg viewBox="0 0 14 24" aria-hidden="true"><rect x="4.5" y=".5" width="5" height="2.6" rx="1" fill="#2a3f73"/><rect x="1.2" y="2.8" width="11.6" height="20.4" rx="2.6" fill="#0b1834" stroke="#2a3f73" stroke-width="1.4"/><path d="M7.8 7.6l-2.6 5.2h2.2l-1 4.6 3.2-6h-2.2z" fill="#2a3f73"/></svg>';
   const BAT_F = '<svg class="f" viewBox="0 0 14 24" aria-hidden="true"><rect x="4.5" y=".5" width="5" height="2.6" rx="1" fill="#f1dcaa"/><rect x="1.2" y="2.8" width="11.6" height="20.4" rx="2.6" fill="#0b1834" stroke="#f1dcaa" stroke-width="1.4"/><rect x="3.2" y="4.8" width="7.6" height="16.4" rx="1.4" fill="#e2c98f"/><path d="M7.8 7.6l-2.6 5.2h2.2l-1 4.6 3.2-6h-2.2z" fill="#1a1408" opacity=".75"/></svg>';
+  // Delvis fylt batteri: hel gullkontur, og bare innmaten fylles nedenfra
+  const BAT_O = '<svg viewBox="0 0 14 24" aria-hidden="true"><rect x="4.5" y=".5" width="5" height="2.6" rx="1" fill="#f1dcaa"/><rect x="1.2" y="2.8" width="11.6" height="20.4" rx="2.6" fill="#0b1834" stroke="#f1dcaa" stroke-width="1.4"/><path d="M7.8 7.6l-2.6 5.2h2.2l-1 4.6 3.2-6h-2.2z" fill="#2a3f73"/></svg>';
+  const BAT_P = '<svg class="f" viewBox="0 0 14 24" aria-hidden="true"><rect x="3.2" y="4.8" width="7.6" height="16.4" rx="1.4" fill="#e2c98f"/><path d="M7.8 7.6l-2.6 5.2h2.2l-1 4.6 3.2-6h-2.2z" fill="#1a1408" opacity=".75"/></svg>';
   const bmCss = document.createElement('style');
   bmCss.textContent = `.bm{display:inline-flex;align-items:center;gap:3px;vertical-align:middle}.bm .bc{position:relative;display:inline-block;width:12px;height:21px}.bm.sm .bc{width:9px;height:16px}.bm.lg .bc{width:19px;height:33px;gap:4px}.bm .bc svg{position:absolute;inset:0;width:100%;height:100%}.bm .num{margin-left:6px;font-family:Anton,sans-serif;color:var(--gold)}@keyframes bmup{from{clip-path:inset(100% 0 0 0)}}.bm .bc .f{animation:bmup .6s ease-out both;animation-delay:calc(var(--k) * 60ms)}@media(prefers-reduced-motion:reduce){.bm .bc .f{animation:none}}.bm.still .bc .f{animation:none}`;
   document.head.append(bmCss);
@@ -391,7 +394,9 @@
     let h = '';
     for (let i = 0; i < 10; i++) {
       const fr = v == null ? 0 : Math.max(0, Math.min(1, v - i));
-      h += `<span class="bc" style="--k:${i}">${BAT_E}${fr > 0 ? BAT_F.replace('class="f"', `class="f" style="clip-path:inset(${Math.round((1 - fr) * 100)}% 0 0 0)"`) : ''}</span>`;
+      // innmaten går fra y=4.8 til 21.2 av 24: klipp slik at prosenten gjelder selve innmaten
+      const top = (4.8 + (1 - fr) * 16.4) / 24 * 100;
+      h += `<span class="bc" style="--k:${i}">${fr >= 1 ? BAT_F : fr > 0 ? BAT_O + BAT_P.replace('class="f"', `class="f" style="clip-path:inset(${top.toFixed(1)}% 0 0 0)"`) : BAT_E}</span>`;
     }
     return `<span class="bm ${size}" role="img" aria-label="${v == null ? 'Ingen score' : f1(v) + ' av 10 batterier'}">${h}${showNum ? `<span class="num">${f1(v)}</span>` : ''}</span>`;
   }
