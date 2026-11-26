@@ -169,6 +169,25 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 .nt .who button{background:none;border:0;padding:0;font:inherit;color:var(--muted);cursor:pointer}
 .nt .lk{display:flex;align-items:center;gap:6px;color:var(--gold);font-weight:700;font-size:14px;margin-top:auto;padding-top:4px}
 .nt .lk span{color:var(--ink)}
+.nt[data-session],.card[data-drink]{cursor:pointer;transition:transform .15s}
+.nt[data-session]:active,.card[data-drink]:active{transform:scale(.98)}
+.nt[data-session]:focus-visible,.card[data-drink]:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.more{font-size:12px;font-weight:700;color:var(--gold)}
+.dt-hero{position:relative;height:220px;margin:-22px -18px 16px;border-radius:24px 24px 0 0;overflow:hidden;background:repeating-linear-gradient(135deg,#0f1f45 0 12px,#0c1a3b 12px 24px);display:grid;place-items:center;color:#5d72a3}
+.dt-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dt-hero::after{content:"";position:absolute;inset:auto 0 0;height:90px;background:linear-gradient(transparent,var(--bg));pointer-events:none}
+.dt-top{display:flex;gap:14px;align-items:flex-start;justify-content:space-between}
+.dt-tot{font-family:Anton,sans-serif;font-size:44px;line-height:.9;color:var(--gold);text-align:right}
+.dt-tot small{display:block;font-family:Inter,sans-serif;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--muted);margin-top:4px}
+.dt-r{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.dt-r .rh{display:flex;align-items:center;gap:10px}
+.dt-r .rh .nm{flex:1;min-width:0;background:none;border:0;padding:0;font:inherit;font-weight:800;font-size:16px;color:var(--ink);text-align:left;cursor:pointer}
+.dt-r .rt{font-family:Anton,sans-serif;font-size:24px;color:var(--gold)}
+.dt-r .sv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.dt-r .sv div{background:var(--panel2);border-radius:12px;padding:8px 10px;font-size:12px;color:var(--muted);font-weight:700}
+.dt-r .sv b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:22px;color:var(--ink);line-height:1.1}
+.dt-r p{margin:0;font-size:15px;line-height:1.45}
+.dt-list{display:flex;flex-direction:column;gap:8px}
 .seall{color:var(--gold);font-weight:700;font-size:15px;text-decoration:none}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
 .card .im{height:160px;position:relative;background:repeating-linear-gradient(135deg,#0f1f45 0 12px,#0c1a3b 12px 24px);display:grid;place-items:center;color:#5d72a3}
@@ -229,9 +248,9 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
   <a href="#alle" data-s="alle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8l1 2v14l-1 2H8l-1-2V5z"/><path d="M13 9l-2.5 3.5h3L11 16"/></svg>Drikker</a>
   <a href="#" data-badges><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5"/></svg>Badges</a>
 </div></nav>
-<script src="config.js?v=2026-11-26d"></script>
-<script src="parse.js?v=2026-11-26d"></script>
-<script src="badges.js?v=2026-11-26d"></script>
+<script src="config.js?v=2026-11-26e"></script>
+<script src="parse.js?v=2026-11-26e"></script>
+<script src="badges.js?v=2026-11-26e"></script>
 <script>
 {
 const $ = s => document.querySelector(s);
@@ -279,10 +298,10 @@ function renderNylig() {
     const who = t.scores.map(s => s.name);
     const whoH = who.slice(0, 2).map(n => `<button type="button" data-person="${esc(n)}">${esc(n)}</button>`).join(' og ') + (who.length > 2 ? ` +${who.length - 2}` : '');
     const nl = t.rows.reduce((n, r) => n + ((likes.get(EDParse.cid(r)) || new Set()).size), 0);
-    return `<div class="nt"><div class="im">${t.photo ? `<img src="${esc(t.photo)}" alt="${esc(t.drink)}" loading="lazy" onerror="this.remove()">` : ''}${CAN}
+    return `<div class="nt" data-session="${sessions.indexOf(t)}" role="button" tabindex="0" aria-label="Se testen av ${esc(t.drink)}"><div class="im">${t.photo ? `<img src="${esc(t.photo)}" alt="${esc(t.drink)}" loading="lazy" onerror="this.remove()">` : ''}${CAN}
         ${t.brand ? `<div class="tag">${esc(t.brand)}</div>` : ''}<div class="sc">${f1(t.total)}</div><div class="dt">${esc(dato(t.time))}</div></div>
       <div class="bd"><h3>${esc(t.drink)}</h3><div class="who">${[t.ml ? t.ml + '\u00a0ml' : '', kr(t.price)].filter(Boolean).map(esc).concat(whoH).join(' · ')}</div>
-        ${window.EDBadges.meter(t.total, 'sm')}<div class="lk">${THUMB}<span>${nl}</span></div></div></div>`; }).join('')}</div>`;
+        ${window.EDBadges.meter(t.total, 'sm')}<div class="lk">${THUMB}<span>${nl}</span><span class="more" style="margin-left:auto">Se testen ›</span></div></div></div>`; }).join('')}</div>`;
 }
 
 function best(list, key, low) {
@@ -324,12 +343,12 @@ async function toggleLike(id) {
   if (!who) return askName(() => toggleLike(id));
   const k = who.toLowerCase(), set = likes.get(id) || new Set();
   const had = set.has(k); had ? set.delete(k) : set.add(k); likes.set(id, set);
-  window.EDBadges.setLikes(likes); renderPrat(); renderNylig(); renderFolk(); renderBoard();
+  window.EDBadges.setLikes(likes); renderPrat(); renderNylig(); renderFolk(); renderBoard(); refreshDetail();
   try {
     const r = await fetch(cfg.SCRIPT_URL, {method: 'POST', body: JSON.stringify({action: 'like', id, fra: who})});
     const res = await r.json(); if (!res.ok) throw new Error(res.feil);
-    if (res.liked === had) { had ? set.add(k) : set.delete(k); window.EDBadges.setLikes(likes); renderPrat(); renderNylig(); renderFolk(); renderBoard(); }
-  } catch { had ? set.add(k) : set.delete(k); window.EDBadges.setLikes(likes); renderPrat(); renderNylig(); renderFolk(); renderBoard(); }
+    if (res.liked === had) { had ? set.add(k) : set.delete(k); window.EDBadges.setLikes(likes); renderPrat(); renderNylig(); renderFolk(); renderBoard(); refreshDetail(); }
+  } catch { had ? set.add(k) : set.delete(k); window.EDBadges.setLikes(likes); renderPrat(); renderNylig(); renderFolk(); renderBoard(); refreshDetail(); }
 }
 
 function renderFolk() {
@@ -373,11 +392,11 @@ function renderBoard() {
 }
 
 function card(t) {
-  return `<article class="card"><div class="im">${CAN}${img(t)}</div><div class="bd">
+  return `<article class="card" data-drink="${esc(t.key)}" role="button" tabindex="0" aria-label="Se alle tester av ${esc(t.drink)}"><div class="im">${CAN}${img(t)}</div><div class="bd">
     <div class="hd"><div><h3>${esc(t.drink)}</h3><div class="meta" style="font-size:13px">${esc(metaLine(t))}</div><div class="meta" style="font-size:13px">${dato(t.time) ? 'Sist testet ' + esc(dato(t.time)) + ' · ' : ''}${nR(t)}</div></div><div class="tt">${f1(t.total)}</div></div>
     <div>${window.EDBadges.meter(t.total, 'sm')}</div>
     <div class="bars">${bar('Smak', t.taste, 'sm')}${bar('Smak vs. pris', t.value, 'sm')}</div>
-    ${t.notes.length ? `<p class="quote" style="font-size:14px">${quote(t)}</p>` : ''}</div></article>`;
+    ${t.notes.length ? `<p class="quote" style="font-size:14px">${quote(t)}</p>` : ''}<span class="more">Se hva alle ga ›</span></div></article>`;
 }
 function renderAll() {
   const opts = [['time', 'Sist testet'], ['total', 'Best'], ['name', 'A–Å']];
@@ -388,18 +407,62 @@ function renderAll() {
   $('#alle').innerHTML = html;
 }
 
-function render() { renderNylig(); renderPrat(); renderAwards(); renderFolk(); renderBoard(); renderAll(); }
+// ----- detaljvisning: hva hver tester ga -----
+let detail = null; // { kind, ref, ov }
+function ratingRow(r) {
+  const B = window.EDBadges, id = EDParse.cid(r), set = likes.get(id) || new Set(), m = me().toLowerCase(), on = m && set.has(m);
+  const tot = r.taste != null && r.value != null ? (r.taste + r.value) / 2 : (r.taste ?? r.value);
+  return `<div class="dt-r"><div class="rh">${B.avatarHtml(r.name, ratings)}<button type="button" class="nm" data-person="${esc(r.name)}">${esc(r.name)}</button><span class="rt">${f1(tot)}</span></div>
+    <div class="sv"><div>Smak<b>${r.taste ?? '–'}</b></div><div>Smak vs. pris<b>${r.value ?? '–'}</b></div></div>
+    ${r.note ? `<p>«${esc(r.note)}»</p>` : ''}
+    <button type="button" class="like${on ? ' on' : ''}" data-like="${id}" aria-pressed="${on ? 'true' : 'false'}" aria-label="${on ? 'Fjern like' : 'Lik vurderingen til ' + esc(r.name)}">👍 ${set.size || ''}</button></div>`;
+}
+function detailHtml(kind, ref) {
+  if (kind === 'session') {
+    const t = sessions.find(x => x.time === ref.time && x.key === ref.key); if (!t) return '';
+    return `<div class="dt-hero">${CAN}${img(t)}</div>
+      <div class="dt-top"><div style="min-width:0"><h3>${esc(t.drink)}</h3><div class="ksub">${esc(metaLine(t))}</div><div class="ksub">${esc(dato(t.time))} · ${nR(t)}</div></div><div class="dt-tot">${f1(t.total)}<small>TOTAL</small></div></div>
+      <div style="margin-top:14px">${window.EDBadges.meter(t.total, 'sm')}</div>
+      <div class="bars" style="margin-top:12px">${bar('Smak', t.taste, 'sm')}${bar('Smak vs. pris', t.value, 'sm')}</div>
+      <div class="lbl2">Hva hver tester ga</div><div class="dt-list">${t.rows.map(ratingRow).join('')}</div>
+      ${t.drinkAll && t.drinkAll.key && ratings.filter(r => EDParse.drinkKey(r.drink) === t.key).length > t.rows.length ? `<button type="button" class="ghost" style="margin-top:14px;width:100%" data-drink-open="${esc(t.key)}">Se alle tester av ${esc(t.drink)}</button>` : ''}`;
+  }
+  const d = tests.find(x => x.key === ref.key); if (!d) return '';
+  const ss = sessions.filter(x => x.key === d.key);
+  return `<div class="dt-hero">${CAN}${img(d)}</div>
+    <div class="dt-top"><div style="min-width:0"><h3>${esc(d.drink)}</h3><div class="ksub">${esc(metaLine(d))}</div><div class="ksub">${nR(d)}</div></div><div class="dt-tot">${f1(d.total)}<small>SNITT</small></div></div>
+    <div class="bars" style="margin-top:14px">${bar('Smak', d.taste, 'sm')}${bar('Smak vs. pris', d.value, 'sm')}</div>
+    ${ss.map(t => `<div class="lbl2">${esc(dato(t.time) || 'Uten dato')} · ${f1(t.total)}</div><div class="dt-list">${t.rows.map(ratingRow).join('')}</div>`).join('')}`;
+}
+function openDetail(kind, ref) {
+  if (detail && detail.ov && document.body.contains(detail.ov)) detail.ov.remove();
+  const html = detailHtml(kind, ref); if (!html) return;
+  window.EDBadges.sheet(html, ov => { detail = { kind, ref, ov }; });
+}
+function refreshDetail() {
+  if (!detail || !detail.ov || !document.body.contains(detail.ov)) { detail = null; return; }
+  const sh = detail.ov.querySelector('.ed-sheet'), top = sh.scrollTop, html = detailHtml(detail.kind, detail.ref);
+  if (!html) return;
+  sh.innerHTML = '<button type="button" class="x" aria-label="Lukk">×</button>' + html; sh.scrollTop = top;
+}
+
+function render() { refreshDetail(); renderNylig(); renderPrat(); renderAwards(); renderFolk(); renderBoard(); renderAll(); }
 
 document.addEventListener('click', e => {
   const p = e.target.closest('[data-sort]'); if (p) { sortKey = p.dataset.sort; renderBoard(); return; }
   const a = e.target.closest('[data-all]'); if (a) { allSort = a.dataset.all; renderAll(); return; }
   const pp = e.target.closest('[data-person]'); if (pp) { window.EDBadges.openProfile(pp.dataset.person, ratings); return; }
   const lk = e.target.closest('[data-like]'); if (lk) { toggleLike(lk.dataset.like); return; }
+  const dop = e.target.closest('[data-drink-open]'); if (dop) { openDetail('drink', { key: dop.dataset.drinkOpen }); return; }
+  const ses = e.target.closest('[data-session]'); if (ses) { const t = sessions[+ses.dataset.session]; if (t) openDetail('session', { time: t.time, key: t.key }); return; }
+  const dr = e.target.closest('[data-drink]'); if (dr) { openDetail('drink', { key: dr.dataset.drink }); return; }
   if (e.target.closest('[data-rename]')) { askName(); return; }
   if (e.target.closest('[data-welcome]')) { window.EDBadges.welcome(true); return; }
   if (e.target.closest('[data-badges]')) { e.preventDefault(); window.EDBadges.openInfo(ratings); return; }
   if (e.target.closest('[data-info]')) window.EDBadges.openInfo(ratings);
 });
+
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-session],[data-drink]')) { e.preventDefault(); e.target.click(); } });
 
 // active nav link while scrolling
 const navLinks = [...document.querySelectorAll('nav.bnav a[data-s]')];
