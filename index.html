@@ -188,6 +188,13 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 .dt-r .sv b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:22px;color:var(--ink);line-height:1.1}
 .dt-r p{margin:0;font-size:15px;line-height:1.45}
 .dt-list{display:flex;flex-direction:column;gap:8px}
+.sharecard{display:flex;gap:18px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:18px}
+.sharecard .qr{flex:0 0 auto;width:132px;height:132px;border-radius:14px;background:#fff}
+.sharecard .btns,.shr .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.shr{margin-top:16px;padding:14px;border-radius:16px;background:var(--panel);border:1px solid var(--line);display:flex;gap:14px;align-items:center}
+.shr img{width:92px;height:92px;border-radius:12px;background:#fff;flex:0 0 auto}
+.ed-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));z-index:120;background:var(--ink);color:var(--bg);font-weight:700;font-size:14px;padding:12px 16px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:90vw}
+@media(max-width:520px){.sharecard{flex-direction:column;text-align:center}.sharecard .btns{justify-content:center}}
 .seall{color:var(--gold);font-weight:700;font-size:15px;text-decoration:none}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
 .card .im{height:160px;position:relative;background:repeating-linear-gradient(135deg,#0f1f45 0 12px,#0c1a3b 12px 24px);display:grid;place-items:center;color:#5d72a3}
@@ -229,6 +236,7 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
   <div class="notice hidden" id="notice"></div>
 
   <section id="siste"></section>
+  <section id="del"></section>
   <section id="prat"></section>
   <section id="kaaringer"></section>
   <section id="folk"></section>
@@ -248,9 +256,10 @@ footer{font-size:13px;color:#7489b8;border-top:1px solid var(--line);padding-top
   <a href="#alle" data-s="alle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8l1 2v14l-1 2H8l-1-2V5z"/><path d="M13 9l-2.5 3.5h3L11 16"/></svg>Drikker</a>
   <a href="#" data-badges><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5"/></svg>Badges</a>
 </div></nav>
-<script src="config.js?v=2026-11-26e"></script>
-<script src="parse.js?v=2026-11-26e"></script>
-<script src="badges.js?v=2026-11-26e"></script>
+<script src="config.js?v=2026-11-27a"></script>
+<script src="qr.js?v=2026-11-27a"></script>
+<script src="parse.js?v=2026-11-27a"></script>
+<script src="badges.js?v=2026-11-27a"></script>
 <script>
 {
 const $ = s => document.querySelector(s);
@@ -425,6 +434,7 @@ function detailHtml(kind, ref) {
       <div style="margin-top:14px">${window.EDBadges.meter(t.total, 'sm')}</div>
       <div class="bars" style="margin-top:12px">${bar('Smak', t.taste, 'sm')}${bar('Smak vs. pris', t.value, 'sm')}</div>
       <div class="lbl2">Hva hver tester ga</div><div class="dt-list">${t.rows.map(ratingRow).join('')}</div>
+      ${(() => { const d = tests.find(x => x.key === t.key); return d ? shareBlock(d) : ''; })()}
       ${t.drinkAll && t.drinkAll.key && ratings.filter(r => EDParse.drinkKey(r.drink) === t.key).length > t.rows.length ? `<button type="button" class="ghost" style="margin-top:14px;width:100%" data-drink-open="${esc(t.key)}">Se alle tester av ${esc(t.drink)}</button>` : ''}`;
   }
   const d = tests.find(x => x.key === ref.key); if (!d) return '';
@@ -432,6 +442,7 @@ function detailHtml(kind, ref) {
   return `<div class="dt-hero">${CAN}${img(d)}</div>
     <div class="dt-top"><div style="min-width:0"><h3>${esc(d.drink)}</h3><div class="ksub">${esc(metaLine(d))}</div><div class="ksub">${nR(d)}</div></div><div class="dt-tot">${f1(d.total)}<small>SNITT</small></div></div>
     <div class="bars" style="margin-top:14px">${bar('Smak', d.taste, 'sm')}${bar('Smak vs. pris', d.value, 'sm')}</div>
+    ${shareBlock(d)}
     ${ss.map(t => `<div class="lbl2">${esc(dato(t.time) || 'Uten dato')} · ${f1(t.total)}</div><div class="dt-list">${t.rows.map(ratingRow).join('')}</div>`).join('')}`;
 }
 function openDetail(kind, ref) {
@@ -446,13 +457,157 @@ function refreshDetail() {
   sh.innerHTML = '<button type="button" class="x" aria-label="Lukk">×</button>' + html; sh.scrollTop = top;
 }
 
-function render() { refreshDetail(); renderNylig(); renderPrat(); renderAwards(); renderFolk(); renderBoard(); renderAll(); }
+
+// ----- deling: lenker, QR-koder og delekort -----
+const siteBase = () => location.href.split('#')[0].split('?')[0].replace(/index\.html$/, '');
+const drinkUrl = key => siteBase() + '#drikk/' + encodeURIComponent(key);
+function toast(msg) { document.querySelectorAll('.ed-toast').forEach(n => n.remove()); const t = document.createElement('div'); t.className = 'ed-toast'; t.setAttribute('role', 'status'); t.textContent = msg; document.body.append(t); clearTimeout(toast.t); toast.t = setTimeout(() => t.remove(), 4500); }
+function copyQuiet(t) {
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).catch(() => {}); return; } } catch {}
+  try { const ta = document.createElement('textarea'); ta.style.cssText = 'position:fixed;opacity:0'; ta.value = t; document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove(); } catch {}
+}
+function drawQR(x, text, px, py, size, dark) {
+  const m = window.KTQR(text, 'M'), n = m.length, q = 2, cell = Math.floor(size / (n + q * 2)), real = cell * (n + q * 2), off = Math.floor((size - real) / 2);
+  x.fillStyle = '#ffffff'; x.beginPath(); if (x.roundRect) x.roundRect(px, py, size, size, Math.round(size * .07)); else x.rect(px, py, size, size); x.fill();
+  x.fillStyle = dark || '#07122b';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (m[r][c]) x.fillRect(px + off + (c + q) * cell, py + off + (r + q) * cell, cell, cell);
+}
+const qrCache = new Map();
+function qrData(text, size) {
+  const k = text + '|' + size; if (qrCache.has(k)) return qrCache.get(k);
+  try { const c = document.createElement('canvas'); c.width = c.height = size; drawQR(c.getContext('2d'), text, 0, 0, size); const u = c.toDataURL('image/png'); qrCache.set(k, u); return u; } catch { return ''; }
+}
+async function shareLink(title, text, url) {
+  try { if (navigator.share) { await navigator.share({ title, text, url }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  copyQuiet(text + ' ' + url); toast('Lenken er kopiert.');
+}
+function renderDel() {
+  const url = siteBase();
+  $('#del').innerHTML = `<div class="sharecard">
+    <img class="qr" src="${qrData(url, 396)}" alt="QR-kode til ENERGY LAB">
+    <div style="flex:1;min-width:0"><h2 class="h" style="font-size:28px">Del ENERGY LAB</h2>
+      <div style="color:var(--muted);margin-top:6px;line-height:1.45">Vis QR-koden til nye testere. De scanner med kameraet og kan legge inn sin første test med en gang. Jo flere som tester, jo bedre blir topplista.</div>
+      <div class="btns"><button type="button" class="btn gold" data-share-site>Del siden</button><button type="button" class="btn" data-copy="${esc(url)}">Kopier lenke</button></div></div></div>`;
+}
+function shareBlock(d) {
+  const url = drinkUrl(d.key);
+  return `<div class="shr"><img src="${qrData(url, 276)}" alt="QR-kode til ${esc(d.drink)}">
+    <div style="flex:1;min-width:0"><b>Del ${esc(d.drink)}</b><div style="color:var(--muted);font-size:13px;margin-top:2px">Vis QR-koden, eller del et ferdig bilde med score og lenke.</div>
+    <div class="btns"><button type="button" class="btn gold" data-story="${esc(d.key)}">Lag delekort</button><button type="button" class="btn" data-share-drink="${esc(d.key)}">Del lenke</button></div></div></div>`;
+}
+async function storyCanvas(d, rank) {
+  try { await document.fonts.load('100px Anton'); } catch {}
+  const c = document.createElement('canvas'); c.width = 1080; c.height = 1920;
+  const x = c.getContext('2d'), A = 'Anton, Impact, sans-serif';
+  const g = x.createRadialGradient(540, -200, 50, 540, -200, 1300); g.addColorStop(0, '#17336f'); g.addColorStop(1, '#07122b');
+  x.fillStyle = g; x.fillRect(0, 0, 1080, 1920);
+  x.fillStyle = '#f4f6fb'; x.font = `130px ${A}`; x.fillText('ENERGY', 60, 200); x.fillStyle = '#e2c98f'; x.fillText('LAB', 60 + x.measureText('ENERGY').width + 26, 200);
+  // boks-illustrasjon
+  x.fillStyle = '#0e1c3d'; x.fillRect(60, 260, 960, 620);
+  x.save(); x.beginPath(); x.rect(60, 260, 960, 620); x.clip(); x.strokeStyle = 'rgba(74,163,255,.08)'; x.lineWidth = 40;
+  for (let i = -1200; i < 1200; i += 100) { x.beginPath(); x.moveTo(i, 950); x.lineTo(i + 800, 150); x.stroke(); }
+  x.translate(400, 570); x.rotate(-0.12);
+  x.fillStyle = '#c9d3e6'; x.beginPath(); x.ellipse(0, -230, 120, 28, 0, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#4aa3ff'; x.fillRect(-120, -230, 240, 460);
+  x.fillStyle = '#1f6fd1'; x.fillRect(-120, -230, 60, 460);
+  x.fillStyle = '#e2c98f'; x.beginPath(); x.moveTo(20, -120); x.lineTo(-40, 30); x.lineTo(5, 30); x.lineTo(-25, 140); x.lineTo(55, -20); x.lineTo(10, -20); x.lineTo(45, -120); x.closePath(); x.fill();
+  x.fillStyle = '#9fb0d0'; x.beginPath(); x.ellipse(0, 230, 120, 28, 0, 0, Math.PI); x.fill();
+  x.restore();
+  const tag = rank ? `#${rank} PÅ TOPPLISTA` : 'ENERGIDRIKKTEST';
+  x.font = '800 34px Inter, sans-serif'; const tw = x.measureText(tag).width;
+  x.fillStyle = '#07122b'; x.fillRect(96, 296, tw + 48, 66); x.fillStyle = '#e2c98f'; x.fillText(tag, 120, 341);
+  x.fillStyle = '#e2c98f'; x.beginPath(); x.arc(820, 760, 170, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#1a1408'; x.textAlign = 'center'; x.font = `170px ${A}`; x.fillText(f1(d.total), 820, 810);
+  x.font = '800 28px Inter, sans-serif'; x.fillText(nR(d).toUpperCase(), 820, 860);
+  x.textAlign = 'left'; x.fillStyle = '#f4f6fb'; x.font = `110px ${A}`;
+  const words = String(d.drink).toUpperCase().split(/\s+/); let line = '', y = 1020; const lines = [];
+  words.forEach(w => { const tl = line ? line + ' ' + w : w; if (x.measureText(tl).width > 960 && line) { lines.push(line); line = w; } else line = tl; }); lines.push(line);
+  lines.slice(0, 2).forEach(l => { x.fillText(l, 60, y); y += 118; });
+  x.fillStyle = '#9fb0d0'; x.font = '500 40px Inter, sans-serif'; x.fillText(metaLine(d), 60, y - 40);
+  let by = y + 40; const top = by;
+  [['Smak', d.taste], ['Smak vs. pris', d.value]].forEach(([l, v]) => {
+    x.fillStyle = '#9fb0d0'; x.font = '600 34px Inter, sans-serif'; x.fillText(l, 60, by + 28);
+    x.fillStyle = '#223766'; x.fillRect(60, by + 48, 560, 30); x.fillStyle = '#e2c98f'; x.fillRect(60, by + 48, 56 * (v || 0), 30);
+    x.fillStyle = '#f4f6fb'; x.font = `52px ${A}`; x.fillText(f1(v), 640, by + 80); by += 130;
+  });
+  try { drawQR(x, drinkUrl(d.key), 760, top, 260); x.fillStyle = '#e2c98f'; x.font = '800 26px Inter, sans-serif'; x.textAlign = 'center'; x.fillText('SCAN FOR Å SE DRIKKEN', 890, top + 300); x.textAlign = 'left'; } catch {}
+  x.fillStyle = '#e2c98f'; x.font = '700 34px Inter, sans-serif'; x.fillText(siteBase().replace(/^https?:\/\//, ''), 60, 1860);
+  return c;
+}
+async function openStory(key) {
+  const d = tests.find(x => x.key === key); if (!d) return;
+  toast('Lager delekort …');
+  const ranked = [...tests].filter(t => t.total != null).sort((a, b) => b.total - a.total);
+  const rank = ranked.findIndex(t => t.key === key) + 1 || null;
+  const c = await storyCanvas(d, rank);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
+  const name = 'energy-lab-' + String(key).replace(/[^a-z0-9]+/gi, '-') + '.jpg';
+  const file = new File([blob], name, { type: 'image/jpeg' });
+  const url = URL.createObjectURL(blob), link = drinkUrl(key), text = `${d.drink}: ${f1(d.total)} på ENERGY LAB` + (rank ? ` (#${rank} på topplista)` : '');
+  const canFiles = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+  document.querySelectorAll('.ed-toast').forEach(n => n.remove());
+  window.EDBadges.sheet(`<h3 class="h" style="font-size:28px;color:var(--gold);text-align:center">Delekort</h3>
+    <img src="${url}" alt="Delekort for ${esc(d.drink)}" style="display:block;width:min(62vw,260px);aspect-ratio:9/16;object-fit:cover;margin:12px auto 0;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);-webkit-touch-callout:default">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+      ${canFiles ? '<button type="button" class="btn gold" data-st-share>Del bilde + lenke</button>' : ''}
+      <button type="button" class="btn" data-st-link>Del bare lenken</button>
+      <button type="button" class="btn" data-st-copy>Kopier lenke</button>
+      ${canFiles ? '' : `<a class="btn" style="text-align:center;text-decoration:none;color:var(--ink)" href="${url}" download="${name}">Last ned bildet</a>`}
+    </div>
+    <p style="color:var(--muted);font-size:13px;line-height:1.45;margin:14px 0 0"><b style="color:var(--ink)">Snap og Instagram story:</b> lenken kopieres når du deler. Legg til et lenke-klistremerke 🔗 og lim den inn. Bildet har også en QR-kode til drikken.</p>`,
+    (ov) => {
+      ov.addEventListener('click', async e => {
+        if (e.target.closest('[data-st-share]')) { copyQuiet(link); try { await navigator.share({ files: [file], text: text + '\n' + link }); toast('Lenken er kopiert. Lim den inn som lenke-klistremerke i storyen.'); } catch (er) { if (!er || er.name !== 'AbortError') toast('Fikk ikke delt. Hold fingeren på bildet og lagre det i Bilder.'); } }
+        else if (e.target.closest('[data-st-link]')) shareLink('ENERGY LAB', text, link);
+        else if (e.target.closest('[data-st-copy]')) { copyQuiet(link); toast('Lenken er kopiert.'); }
+      });
+    });
+}
+// ----- «Nytt i ENERGY LAB»: vises én gang per nyhet -----
+const NEWS_KEY = 'ed-nytt-2026-11-27';
+function seenNews() { try { localStorage.setItem(NEWS_KEY, '1'); } catch {} }
+function showNews(after) {
+  try { if (localStorage.getItem(NEWS_KEY)) return false; } catch { return false; }
+  seenNews();
+  const row = (i, b, t) => `<div style="display:flex;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px"><span style="font-size:26px;width:34px;text-align:center;flex:0 0 auto">${i}</span><span><b>${b}</b><br><span style="color:var(--muted);font-size:13px">${t}</span></span></div>`;
+  let done = false;
+  const fin = () => { if (done) return; done = true; if (after) setTimeout(after, 400); };
+  window.EDBadges.sheet(`<div style="text-align:center;font-size:40px">🆕📲</div><h3 class="h" style="font-size:30px;color:var(--gold);text-align:center;margin-top:6px">Nytt i ENERGY LAB</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+      ${row('👆', 'Trykk på en test', 'Se hva hver tester ga i smak og smak vs. pris, med kommentarer og likes.')}
+      ${row('📸', 'Delekort', 'Lag et ferdig story-bilde av en drikk, med score og QR-kode. Del til Snap, Instagram eller chatten.')}
+      ${row('🔗', 'Del bilde + lenke', 'Lenken følger med, og kopieres så du kan lime den inn som lenke-klistremerke.')}
+      ${row('🔳', 'QR-kode til siden', 'På forsiden. Vis den til nye testere, så er de inne med en gang.')}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:18px">
+      <button type="button" class="btn gold" data-news-try>Prøv delingen</button>
+      <button type="button" class="btn" data-news-ok>Kult, skjønner</button>
+    </div>`, (ov, close) => {
+      ov.addEventListener('click', e => {
+        if (e.target.closest('[data-news-ok]')) { close(); fin(); }
+        else if (e.target.closest('[data-news-try]')) { close(); done = true; const el = document.getElementById('del'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        else if (e.target === ov || e.target.closest('.x')) fin();
+      });
+    });
+  return true;
+}
+function openFromHash() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (h.startsWith('drikk/') && tests.length) { const k = h.slice(6); if (tests.some(t => t.key === k)) openDetail('drink', { key: k }); }
+}
+window.addEventListener('hashchange', openFromHash);
+
+function render() { refreshDetail(); renderDel(); renderNylig(); renderPrat(); renderAwards(); renderFolk(); renderBoard(); renderAll(); }
 
 document.addEventListener('click', e => {
   const p = e.target.closest('[data-sort]'); if (p) { sortKey = p.dataset.sort; renderBoard(); return; }
   const a = e.target.closest('[data-all]'); if (a) { allSort = a.dataset.all; renderAll(); return; }
   const pp = e.target.closest('[data-person]'); if (pp) { window.EDBadges.openProfile(pp.dataset.person, ratings); return; }
   const lk = e.target.closest('[data-like]'); if (lk) { toggleLike(lk.dataset.like); return; }
+  if (e.target.closest('[data-share-site]')) { shareLink('ENERGY LAB', 'Bli med og test energidrikk på ENERGY LAB 🥤⚡', siteBase()); return; }
+  const cp = e.target.closest('[data-copy]'); if (cp) { copyQuiet(cp.dataset.copy); toast('Lenken er kopiert.'); return; }
+  const st = e.target.closest('[data-story]'); if (st) { openStory(st.dataset.story); return; }
+  const sd = e.target.closest('[data-share-drink]'); if (sd) { const d = tests.find(x => x.key === sd.dataset.shareDrink); if (d) shareLink('ENERGY LAB', `${d.drink}: ${f1(d.total)} på ENERGY LAB`, drinkUrl(d.key)); return; }
   const dop = e.target.closest('[data-drink-open]'); if (dop) { openDetail('drink', { key: dop.dataset.drinkOpen }); return; }
   const ses = e.target.closest('[data-session]'); if (ses) { const t = sessions[+ses.dataset.session]; if (t) openDetail('session', { time: t.time, key: t.key }); return; }
   const dr = e.target.closest('[data-drink]'); if (dr) { openDetail('drink', { key: dr.dataset.drink }); return; }
@@ -481,6 +636,7 @@ function apply(rows, likeRows) {
   $('#updated').textContent = ratings.length ? `${tests.length} drikker · ${ratings.length} vurderinger` : '';
   window.__edRatings = ratings;
 }
+let hashOpened = false;
 async function load() {
   if (loading) return; loading = true;
   const nb = $('#notice'), id = (window.EDConfig || {}).SHEET_ID;
@@ -489,7 +645,7 @@ async function load() {
     const likeRows = await EDParse.loadSheet(id, 'Likes').catch(() => (readCache() || {}).likes || []);
     try { localStorage.setItem('ed-cache', JSON.stringify({rows, likes: likeRows})); } catch {}
     const sig = JSON.stringify([rows, likeRows]);
-    if (sig !== lastSig) { lastSig = sig; apply(rows, likeRows); render(); }
+    if (sig !== lastSig) { lastSig = sig; apply(rows, likeRows); render(); if (!hashOpened) { hashOpened = true; openFromHash(); } }
     nb.classList.toggle('hidden', !!ratings.length);
     nb.innerHTML = ratings.length ? '' : `<span><b>Ingen tester ennå.</b> Bli den første, og ta badgen «Første slurk».</span><a class="add" href="legg-inn.html">+ Legg inn første test</a>`;
   } catch {
@@ -503,7 +659,7 @@ async function load() {
   loading = false;
   if (!firstDone) {
     firstDone = true;
-    setTimeout(() => { const B = window.EDBadges, cel = () => B.celebrateNew(ratings); if (B.welcome(false, cel)) return; setTimeout(() => { if (!document.querySelector('.ed-ov')) B.installBanner(); }, 2500); if (!B.monthReveal(ratings)) cel(); else setTimeout(cel, 8000); }, 1200);
+    setTimeout(() => { const B = window.EDBadges, cel = () => B.celebrateNew(ratings); if (B.welcome(false, cel)) { seenNews(); return; } if (showNews(cel)) return; setTimeout(() => { if (!document.querySelector('.ed-ov')) B.installBanner(); }, 2500); if (!B.monthReveal(ratings)) cel(); else setTimeout(cel, 8000); }, 1200);
   }
 }
 // Hjemskjerm-appen på iPhone fortsetter der den var i stedet for å laste på nytt.
